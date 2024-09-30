@@ -1,0 +1,6 @@
+name:PRESET 1- POWER SAVER
+tdp:10
+cpu:2000
+gpu:DEFAULT
+fps:60
+canDelete:false

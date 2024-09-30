@@ -1,0 +1,6 @@
+name:PRESET 2- MODERATE LOAD
+tdp:15
+cpu:2800
+gpu:DEFAULT
+fps:60
+canDelete:false

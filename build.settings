@@ -1,0 +1,459 @@
+--
+-- For more information on build.settings see the Corona SDK Build Guide at:
+-- http://docs.coronalabs.com/guide/distribution/buildSettings/index.html
+--
+
+settings =
+{
+    plugins =
+    {
+
+
+        ["CoronaProvider.native.popup.activity"] =
+        {
+            publisherId = "com.coronalabs",
+            supportedPlatforms = { iphone=true}
+        },
+       
+        
+        -- ["plugin.googleAnalytics.v2"] =
+        -- {
+        --     publisherId = "com.solar2d",
+        -- },  
+        -- ["plugin.flurry.analytics"] =
+        -- {
+        --     publisherId = "com.coronalabs"
+        -- },
+        -- ["plugin.firebaseAnalytics"] =
+        -- {
+        --   publisherId="tech.scotth",
+        --   marketplaceId = "gjiol0",
+        -- },
+       
+       
+        -- ["plugin.tenjin"] =
+        -- {
+        --     publisherId = "com.coronalabs"
+        -- },
+        -- Applovin max base plugin and adapters below:
+        -- ["plugin.applovinMax"] =
+        -- {
+        --     publisherId = "com.solar2d"
+        -- },
+        -- ["plugin.applovinMax.UnityAds"] = 
+        -- {
+        --     publisherId = "com.solar2d"
+        -- },
+        -- ["plugin.applovinMax.IronSource"] = 
+        -- {
+        --     publisherId = "com.solar2d"
+        -- },
+        -- ["plugin.applovinMax.AdColony"] = 
+        -- {
+        --     publisherId = "com.solar2d"
+        -- },
+    },
+
+    splashScreen = 
+    {
+        enable = false
+    },
+    
+    orientation =
+    {
+        -- Supported values for orientation:
+        -- portrait, portraitUpsideDown, landscapeLeft, landscapeRight
+
+        default = "portrait",
+        supported = { "portrait" }
+    },
+    
+    excludeFiles =
+    {
+        -- Include only the necessary files on each platform, if "Icon.png" is for iphone then exclude it from android by adding it in the android table
+        -- excludes files from builds for a specific platforms
+        iphone = { "Icon-*dpi.png"},
+        android = { "Icon.png", "Icon-Small-*.png", "Icon*@2x.png" },
+        -- include only those files in this table which are to be excluded from all the platforms.
+        all = {"Calling points.docx", "hostage.JPG", "player.JPG", "zombie.JPG"},
+    },
+
+    --
+    -- windows Section
+    --
+
+    win32 =
+    {
+        singleInstance = true,
+    },
+
+    window =
+    {   resizable = true,
+        suspendWhenMinimized = true,
+        titleText = {
+            -- The "default" text will be used if the system is using a language and/or
+            -- country code not defined below. This serves as a fallback mechanism.
+            default = "ROG Ally Power Tool",
+        },
+    },
+
+    --
+    -- Android Section
+    --
+    android =
+    {  
+
+        usesPermissions =
+        {
+            "android.permission.INTERNET",
+            "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.GET_ACCOUNTS",
+            "com.android.vending.BILLING",
+            "android.permission.ACCESS_COARSE_LOCATION",
+            "android.permission.ACCESS_WIFI_STATE",
+            "android.permission.POST_NOTIFICATIONS",
+            "com.google.android.gms.permission.AD_ID",
+            "android.permission.WRITE_EXTERNAL_STORAGE",
+            "android.permission.VIBRATE",
+        },
+        applicationChildElements =
+        {
+            --this meta data is being added because for network security android now only allows secure connections(via https, called cleartext) if app is trying to connect an external server/database etc.
+            --We need to opt out of supporting cleartext because our backend(app42) uses http protocol. To include more domains that opt of of this service, see the network_security_config.xml file.
+            [[
+                <meta-data android:name="networkSecurityConfig"
+                    android:value="@xml/network_security_config"/>
+            ]],
+
+            --below is for FB so that we can track app events and use those to run ads for this app on FB ads
+            [[
+                <provider android:authorities="com.facebook.app.FacebookContentProvider1501372770259426"
+                          android:name="com.facebook.FacebookContentProvider" android:exported="true"/>
+            ]],
+
+            [[
+                <meta-data android:name="com.facebook.sdk.ClientToken" android:value="7a8fc0ced27448cdc77d7ae89069cb42"/>
+            ]],
+
+            -- This is for the applovin max plugin
+            [[
+                <meta-data android:name="applovin.sdk.key" android:value="rQ7hZBT6LW8eDHDS55CE-auqbUzaNT8D-GvTSMfouoR53eX9klNhKFWwkTV61dK0vDTLaC8T_ZT3C5Cxqac8q8"/>
+            ]],
+        },
+        facebookAppId = "1501372770259426",
+        googlePlayGamesAppId = "158688413349",
+        useGoogleServicesJson = true,
+        -- minSdkVersion = "22", -- this version corresponds to Android 5.1
+        minSdkVersion = "26", -- this version corresponds to Android 8
+    },
+
+    --
+    -- iOS Section
+    --
+    iphone =
+    {
+        xcassets = "Images.xcassets",
+        entitlements = 
+        {
+            ["com.apple.developer.game-center"] = true,
+        },
+        plist =
+        {
+            ITSAppUsesNonExemptEncryption = false, -- This app doesn't use custom encryption
+            UIApplicationExitsOnSuspend = false,
+            MinimumOSVersion= "11.0",
+            UIStatusBarHidden = true,
+            UIRequiredDeviceCapabilities={"arm64"},
+            UIPrerenderedIcon = true, -- set to false for "shine" overlay
+            UILaunchStoryboardName = "LaunchScreen",
+            GADApplicationIdentifier = "ca-app-pub-5624034654834941~8142385499", -- AdMob app ID for appodeal to run
+            NSAppTransportSecurity = { NSAllowsArbitraryLoads=true },-- needed for applovin max
+            NSBluetoothAlwaysUsageDescription = "This app would like to access bluetooth.",
+            NSLocationAlwaysAndWhenInUseUsageDescription= "This app would like to access your approximate location.",
+            NSUserTrackingUsageDescription = "This will enable us to show targeted and more relevant, higher-quality ads to you.",
+            CFBundleIdentifier = "com.famousdoggstudios.xxxxxxxx",
+            UIBackgroundModes = {"remote-notification"},--for onesignal push
+            FacebookAppID = "1501372770259426",
+            AppLovinSdkKey = "XXXXXXXXXXXXX", -- replace XXXXXXXXXXXXX with your iOS Applovin SDK key
+            CFBundleURLTypes =
+            {
+                { CFBundleURLSchemes = { "fb1501372770259426", } }  -- Replace XXXXXXXXXX with your Facebook App ID
+            },
+            CFBundleIconFiles = {
+                "Icon-40.png",
+                "Icon-58.png",
+                "Icon-76.png",
+                "Icon-80.png",
+                "Icon-87.png",
+                "Icon-120.png",
+                "Icon-152.png",
+                "Icon-167.png",
+                "Icon-180.png",
+                "Icon-1024.png",
+            },
+            FacebookClientToken = "7a8fc0ced27448cdc77d7ae89069cb42",  -- Replace YYYYYYYYYYYYYY with your Facebook Client Token
+            -- Whitelist Facebook apps
+            LSApplicationQueriesSchemes =
+            {
+                "fb",  -- Needed for the facebook-v4a.isFacebookAppEnabled() API
+                "fbapi",
+                "fbauth2",
+                "fb-messenger-api",
+                "fbshareextension"
+            },
+
+
+            SKAdNetworkItems = {
+                {SKAdNetworkIdentifier = "SU67R6K2V3.skadnetwork"},--IDs from here are irnsrc and their partners updated June2022
+                {SKAdNetworkIdentifier = "7ug5zh24hu.skadnetwork"},
+                {SKAdNetworkIdentifier = "9t245vhmpl.skadnetwork"},
+                {SKAdNetworkIdentifier = "prcb7njmu6.skadnetwork"},
+                {SKAdNetworkIdentifier = "22mmun2rn5.skadnetwork"},
+                {SKAdNetworkIdentifier = "uw77j35x4d.skadnetwork"},
+                {SKAdNetworkIdentifier = "c6k4g5qg8m.skadnetwork"},
+                {SKAdNetworkIdentifier = "hs6bdukanm.skadnetwork"},
+                {SKAdNetworkIdentifier = "5tjdwbrq8w.skadnetwork"},
+                {SKAdNetworkIdentifier = "2u9pt9hc89.skadnetwork"},
+                {SKAdNetworkIdentifier = "8s468mfl3y.skadnetwork"},
+                {SKAdNetworkIdentifier = "v72qych5uu.skadnetwork"},
+                {SKAdNetworkIdentifier = "44jx6755aq.skadnetwork"},
+                {SKAdNetworkIdentifier = "m8dbw4sv7c.skadnetwork"},
+                {SKAdNetworkIdentifier = "3rd42ekr43.skadnetwork"},
+                {SKAdNetworkIdentifier = "f7s53z58qe.skadnetwork"},
+                {SKAdNetworkIdentifier = "f38h382jlk.skadnetwork"},
+                {SKAdNetworkIdentifier = "424m5254lk.skadnetwork"},
+                {SKAdNetworkIdentifier = "ludvb6z3bs.skadnetwork"},--applovin through ironSource
+               
+
+                {SKAdNetworkIdentifier = "4pfyvq9l8r.skadnetwork"},--this line and onwards are all adColony ids
+                {SKAdNetworkIdentifier = "yclnxrl5pm.skadnetwork"},
+                {SKAdNetworkIdentifier = "v72qych5uu.skadnetwork"},
+                {SKAdNetworkIdentifier = "tl55sbb4fm.skadnetwork"},
+                {SKAdNetworkIdentifier = "t38b2kh725.skadnetwork"},
+                {SKAdNetworkIdentifier = "prcb7njmu6.skadnetwork"},
+                {SKAdNetworkIdentifier = "ppxm28t8ap.skadnetwork"},
+                {SKAdNetworkIdentifier = "mlmmfzh3r3.skadnetwork"},
+                {SKAdNetworkIdentifier = "klf5c3l5u5.skadnetwork"},
+                {SKAdNetworkIdentifier = "hs6bdukanm.skadnetwork"},
+                {SKAdNetworkIdentifier = "c6k4g5qg8m.skadnetwork"},
+                {SKAdNetworkIdentifier = "9t245vhmpl.skadnetwork"},
+                {SKAdNetworkIdentifier = "9rd848q2bz.skadnetwork"},
+                {SKAdNetworkIdentifier = "8s468mfl3y.skadnetwork"},
+                {SKAdNetworkIdentifier = "7ug5zh24hu.skadnetwork"},
+                {SKAdNetworkIdentifier = "4fzdc2evr5.skadnetwork"},
+                {SKAdNetworkIdentifier = "4468km3ulz.skadnetwork"},
+                {SKAdNetworkIdentifier = "3rd42ekr43.skadnetwork"},
+                {SKAdNetworkIdentifier = "2u9pt9hc89.skadnetwork"},
+                {SKAdNetworkIdentifier = "m8dbw4sv7c.skadnetwork"},
+                {SKAdNetworkIdentifier = "7rz58n8ntl.skadnetwork"},
+                {SKAdNetworkIdentifier = "ejvt5qm6ak.skadnetwork"},
+                {SKAdNetworkIdentifier = "5lm9lj6jb7.skadnetwork"},
+                {SKAdNetworkIdentifier = "44jx6755aq.skadnetwork"},
+                {SKAdNetworkIdentifier = "mtkv5xtk9e.skadnetwork"},
+                {SKAdNetworkIdentifier = "6g9af3uyq4.skadnetwork"},
+                {SKAdNetworkIdentifier = "275upjj5gd.skadnetwork"},
+                {SKAdNetworkIdentifier = "9nlqeag3gk.skadnetwork"},
+                {SKAdNetworkIdentifier = "cg4yq2srnc.skadnetwork"},
+                {SKAdNetworkIdentifier = "g28c52eehv.skadnetwork"},
+                {SKAdNetworkIdentifier = "rx5hdcabgc.skadnetwork"},
+                {SKAdNetworkIdentifier = "u679fj5vs4.skadnetwork"},
+                {SKAdNetworkIdentifier = "uw77j35x4d.skadnetwork"},
+                {SKAdNetworkIdentifier = "wg4vff78zm.skadnetwork"},
+                {SKAdNetworkIdentifier = "qqp299437r.skadnetwork"},
+                {SKAdNetworkIdentifier = "kbmxgpxpgc.skadnetwork"},
+                {SKAdNetworkIdentifier = "294l99pt4k.skadnetwork"},
+
+                {SKAdNetworkIdentifier = "x44k69ngh6.skadnetwork"},--unity skaids from here
+                {SKAdNetworkIdentifier = "mp6xlyr22a.skadnetwork"},
+                {SKAdNetworkIdentifier = "ppxm28t8ap.skadnetwork"},
+                {SKAdNetworkIdentifier = "glqzh8vgby.skadnetwork"},
+                {SKAdNetworkIdentifier = "k674qkevps.skadnetwork"},
+                {SKAdNetworkIdentifier = "w9q455wk68.skadnetwork"},
+                {SKAdNetworkIdentifier = "v79kvwwj4g.skadnetwork"},
+                {SKAdNetworkIdentifier = "3sh42y64q3.skadnetwork"},
+                {SKAdNetworkIdentifier = "3rd42ekr43.skadnetwork"},
+                {SKAdNetworkIdentifier = "238da6jt44.skadnetwork"},
+                {SKAdNetworkIdentifier = "9t245vhmpl.skadnetwork"},
+                {SKAdNetworkIdentifier = "zq492l623r.skadnetwork"},
+                {SKAdNetworkIdentifier = "3qy4746246.skadnetwork"},
+                {SKAdNetworkIdentifier = "s39g8k73mm.skadnetwork"},
+                {SKAdNetworkIdentifier = "5lm9lj6jb7.skadnetwork"},
+                {SKAdNetworkIdentifier = "mlmmfzh3r3.skadnetwork"},
+                {SKAdNetworkIdentifier = "5a6flpkh64.skadnetwork"},
+                {SKAdNetworkIdentifier = "wg4vff78zm.skadnetwork"},
+                {SKAdNetworkIdentifier = "lr83yxwka7.skadnetwork"},
+                {SKAdNetworkIdentifier = "4pfyvq9l8r.skadnetwork"},
+                {SKAdNetworkIdentifier = "9rd848q2bz.skadnetwork"},
+                {SKAdNetworkIdentifier = "32z4fx6l9h.skadnetwork"},
+                {SKAdNetworkIdentifier = "8s468mfl3y.skadnetwork"},
+                {SKAdNetworkIdentifier = "4fzdc2evr5.skadnetwork"},
+                {SKAdNetworkIdentifier = "yclnxrl5pm.skadnetwork"},
+                {SKAdNetworkIdentifier = "v72qych5uu.skadnetwork"},
+                {SKAdNetworkIdentifier = "f73kdq92p3.skadnetwork"},
+                {SKAdNetworkIdentifier = "t38b2kh725.skadnetwork"},
+                {SKAdNetworkIdentifier = "44jx6755aq.skadnetwork"},
+                {SKAdNetworkIdentifier = "2u9pt9hc89.skadnetwork"},
+                {SKAdNetworkIdentifier = "4dzt52r2t5.skadnetwork"},
+                {SKAdNetworkIdentifier = "tl55sbb4fm.skadnetwork"},
+                {SKAdNetworkIdentifier = "m8dbw4sv7c.skadnetwork"},
+                {SKAdNetworkIdentifier = "cstr6suwn9.skadnetwork"},
+                {SKAdNetworkIdentifier = "kbd757ywx3.skadnetwork"},
+                {SKAdNetworkIdentifier = "zmvfpc5aq8.skadnetwork"},
+                {SKAdNetworkIdentifier = "av6w8kgt66.skadnetwork"},
+                {SKAdNetworkIdentifier = "f7s53z58qe.skadnetwork"},
+                {SKAdNetworkIdentifier = "578prtvx9j.skadnetwork"},
+                {SKAdNetworkIdentifier = "22mmun2rn5.skadnetwork"},
+                {SKAdNetworkIdentifier = "488r3q3dtq.skadnetwork"},
+                {SKAdNetworkIdentifier = "ydx93a7ass.skadnetwork"},
+                {SKAdNetworkIdentifier = "4468km3ulz.skadnetwork"},
+                {SKAdNetworkIdentifier = "c6k4g5qg8m.skadnetwork"},
+                {SKAdNetworkIdentifier = "5tjdwbrq8w.skadnetwork"},
+                {SKAdNetworkIdentifier = "prcb7njmu6.skadnetwork"},
+
+                ------IDs below are for APPLOVIN MAX plugin-----
+                --Comment these out if using the IDs above for irnSrc
+                {SKAdNetworkIdentifier= "275upjj5gd.skadnetwork"},
+                {SKAdNetworkIdentifier= "294l99pt4k.skadnetwork"},
+                {SKAdNetworkIdentifier= "2fnua5tdw4.skadnetwork"},
+                {SKAdNetworkIdentifier= "2u9pt9hc89.skadnetwork"},
+                {SKAdNetworkIdentifier= "3rd42ekr43.skadnetwork"},
+                {SKAdNetworkIdentifier= "4468km3ulz.skadnetwork"},
+                {SKAdNetworkIdentifier= "44jx6755aq.skadnetwork"},
+                {SKAdNetworkIdentifier= "44n7hlldy6.skadnetwork"},
+                {SKAdNetworkIdentifier= "4fzdc2evr5.skadnetwork"},
+                {SKAdNetworkIdentifier= "4pfyvq9l8r.skadnetwork"},
+                {SKAdNetworkIdentifier= "523jb4fst2.skadnetwork"},
+                {SKAdNetworkIdentifier= "5l3tpt7t6e.skadnetwork"},
+                {SKAdNetworkIdentifier= "5lm9lj6jb7.skadnetwork"},
+                {SKAdNetworkIdentifier= "6964rsfnh4.skadnetwork"},
+                {SKAdNetworkIdentifier= "6g9af3uyq4.skadnetwork"},
+                {SKAdNetworkIdentifier= "74b6s63p6l.skadnetwork"},
+                {SKAdNetworkIdentifier= "7rz58n8ntl.skadnetwork"},
+                {SKAdNetworkIdentifier= "7ug5zh24hu.skadnetwork"},
+                {SKAdNetworkIdentifier= "84993kbrcf.skadnetwork"},
+                {SKAdNetworkIdentifier= "8s468mfl3y.skadnetwork"},
+                {SKAdNetworkIdentifier= "9nlqeag3gk.skadnetwork"},
+                {SKAdNetworkIdentifier= "9rd848q2bz.skadnetwork"},
+                {SKAdNetworkIdentifier= "9t245vhmpl.skadnetwork"},
+                {SKAdNetworkIdentifier= "a7xqa6mtl2.skadnetwork"},
+                {SKAdNetworkIdentifier= "c6k4g5qg8m.skadnetwork"},
+                {SKAdNetworkIdentifier= "cg4yq2srnc.skadnetwork"},
+                {SKAdNetworkIdentifier= "cj5566h2ga.skadnetwork"},
+                {SKAdNetworkIdentifier= "e5fvkxwrpn.skadnetwork"},
+                {SKAdNetworkIdentifier= "ejvt5qm6ak.skadnetwork"},
+                {SKAdNetworkIdentifier= "g28c52eehv.skadnetwork"},
+                {SKAdNetworkIdentifier= "g2y4y55b64.skadnetwork"},
+                {SKAdNetworkIdentifier= "gta9lk7p23.skadnetwork"},
+                {SKAdNetworkIdentifier= "hs6bdukanm.skadnetwork"},
+                {SKAdNetworkIdentifier= "kbd757ywx3.skadnetwork"},
+                {SKAdNetworkIdentifier= "kbmxgpxpgc.skadnetwork"},
+                {SKAdNetworkIdentifier= "klf5c3l5u5.skadnetwork"},
+                {SKAdNetworkIdentifier= "m8dbw4sv7c.skadnetwork"},
+                {SKAdNetworkIdentifier= "mlmmfzh3r3.skadnetwork"},
+                {SKAdNetworkIdentifier= "mtkv5xtk9e.skadnetwork"},
+                {SKAdNetworkIdentifier= "n6fk4nfna4.skadnetwork"},
+                {SKAdNetworkIdentifier= "n9x2a789qt.skadnetwork"},
+                {SKAdNetworkIdentifier= "ppxm28t8ap.skadnetwork"},
+                {SKAdNetworkIdentifier= "prcb7njmu6.skadnetwork"},
+                {SKAdNetworkIdentifier= "pwa73g5rt2.skadnetwork"},
+                {SKAdNetworkIdentifier= "pwdxu55a5a.skadnetwork"},
+                {SKAdNetworkIdentifier= "qqp299437r.skadnetwork"},
+                {SKAdNetworkIdentifier= "r45fhb6rf7.skadnetwork"},
+                {SKAdNetworkIdentifier= "rx5hdcabgc.skadnetwork"},
+                {SKAdNetworkIdentifier= "t38b2kh725.skadnetwork"},
+                {SKAdNetworkIdentifier= "tl55sbb4fm.skadnetwork"},
+                {SKAdNetworkIdentifier= "u679fj5vs4.skadnetwork"},
+                {SKAdNetworkIdentifier= "uw77j35x4d.skadnetwork"},
+                {SKAdNetworkIdentifier= "v72qych5uu.skadnetwork"},
+                {SKAdNetworkIdentifier= "wg4vff78zm.skadnetwork"},
+                {SKAdNetworkIdentifier= "wzmmz9fp6w.skadnetwork"},
+                {SKAdNetworkIdentifier= "yclnxrl5pm.skadnetwork"},
+                {SKAdNetworkIdentifier= "ydx93a7ass.skadnetwork"},
+                {SKAdNetworkIdentifier= "3qcr597p9d.skadnetwork"},
+                {SKAdNetworkIdentifier= "3qy4746246.skadnetwork"},
+                {SKAdNetworkIdentifier= "3sh42y64q3.skadnetwork"},
+                {SKAdNetworkIdentifier= "424m5254lk.skadnetwork"},
+                {SKAdNetworkIdentifier= "4dzt52r2t5.skadnetwork"},
+                {SKAdNetworkIdentifier= "578prtvx9j.skadnetwork"},
+                {SKAdNetworkIdentifier= "5a6flpkh64.skadnetwork"},
+                {SKAdNetworkIdentifier= "8c4e2ghe7u.skadnetwork"},
+                {SKAdNetworkIdentifier= "av6w8kgt66.skadnetwork"},
+                {SKAdNetworkIdentifier= "cstr6suwn9.skadnetwork"},
+                {SKAdNetworkIdentifier= "f38h382jlk.skadnetwork"},
+                {SKAdNetworkIdentifier= "p78axxw29g.skadnetwork"},
+                {SKAdNetworkIdentifier= "s39g8k73mm.skadnetwork"},
+                {SKAdNetworkIdentifier= "v4nxqhlyqp.skadnetwork"},
+                {SKAdNetworkIdentifier= "zq492l623r.skadnetwork"},
+                {SKAdNetworkIdentifier= "24t9a8vw3c.skadnetwork"},
+                {SKAdNetworkIdentifier= "32z4fx6l9h.skadnetwork"},
+                {SKAdNetworkIdentifier= "54nzkqm89y.skadnetwork"},
+                {SKAdNetworkIdentifier= "6xzpu9s2p8.skadnetwork"},
+                {SKAdNetworkIdentifier= "79pbpufp6p.skadnetwork"},
+                {SKAdNetworkIdentifier= "9b89h5y424.skadnetwork"},
+                {SKAdNetworkIdentifier= "c3frkrj4fj.skadnetwork"},
+                {SKAdNetworkIdentifier= "feyaarzu9v.skadnetwork"},
+                {SKAdNetworkIdentifier= "ggvn48r87g.skadnetwork"},
+                {SKAdNetworkIdentifier= "glqzh8vgby.skadnetwork"},
+                {SKAdNetworkIdentifier= "k674qkevps.skadnetwork"},
+                {SKAdNetworkIdentifier= "ludvb6z3bs.skadnetwork"},
+                {SKAdNetworkIdentifier= "rvh3l7un93.skadnetwork"},
+                {SKAdNetworkIdentifier= "x8jxxk4ff5.skadnetwork"},
+                {SKAdNetworkIdentifier= "xy9t38ct57.skadnetwork"},
+                {SKAdNetworkIdentifier= "zmvfpc5aq8.skadnetwork"},
+                {SKAdNetworkIdentifier= "22mmun2rn5.skadnetwork"},
+                {SKAdNetworkIdentifier= "4w7y6s5ca2.skadnetwork"},
+                {SKAdNetworkIdentifier= "5tjdwbrq8w.skadnetwork"},
+                {SKAdNetworkIdentifier= "6p4ks3rnbw.skadnetwork"},
+                {SKAdNetworkIdentifier= "737z793b9f.skadnetwork"},
+                {SKAdNetworkIdentifier= "97r2b46745.skadnetwork"},
+                {SKAdNetworkIdentifier= "b9bk5wbcq9.skadnetwork"},
+                {SKAdNetworkIdentifier= "bxvub5ada5.skadnetwork"},
+                {SKAdNetworkIdentifier= "dzg6xy7pwj.skadnetwork"},
+                {SKAdNetworkIdentifier= "f73kdq92p3.skadnetwork"},
+                {SKAdNetworkIdentifier= "hdw39hrw9y.skadnetwork"},
+                {SKAdNetworkIdentifier= "lr83yxwka7.skadnetwork"},
+                {SKAdNetworkIdentifier= "mls7yz5dvl.skadnetwork"},
+                {SKAdNetworkIdentifier= "mp6xlyr22a.skadnetwork"},
+                {SKAdNetworkIdentifier= "s69wq72ugq.skadnetwork"},
+                {SKAdNetworkIdentifier= "su67r6k2v3.skadnetwork"},
+                {SKAdNetworkIdentifier= "w9q455wk68.skadnetwork"},
+                {SKAdNetworkIdentifier= "x44k69ngh6.skadnetwork"},
+                {SKAdNetworkIdentifier= "x8uqf25wch.skadnetwork"},
+                {SKAdNetworkIdentifier= "y45688jllp.skadnetwork"},
+                {SKAdNetworkIdentifier= "n38lu8286q.skadnetwork"},
+                {SKAdNetworkIdentifier= "v9wttpbfk9.skadnetwork"},
+                {SKAdNetworkIdentifier= "252b5q8x7y.skadnetwork"},
+                {SKAdNetworkIdentifier= "9g2aggbj52.skadnetwork"},
+                {SKAdNetworkIdentifier= "krvm3zuq6h.skadnetwork"},
+                {SKAdNetworkIdentifier= "nu4557a4je.skadnetwork"},
+                {SKAdNetworkIdentifier= "r26jy69rpl.skadnetwork"},
+                {SKAdNetworkIdentifier= "3l6bd9hu43.skadnetwork"},
+                {SKAdNetworkIdentifier= "488r3q3dtq.skadnetwork"},
+                {SKAdNetworkIdentifier= "52fl2v3hgk.skadnetwork"},
+                {SKAdNetworkIdentifier= "6v7lgmsu45.skadnetwork"},
+                {SKAdNetworkIdentifier= "89z7zv988g.skadnetwork"},
+                {SKAdNetworkIdentifier= "8m87ys6875.skadnetwork"},
+                {SKAdNetworkIdentifier= "hb56zgv37p.skadnetwork"},
+                {SKAdNetworkIdentifier= "m297p6643m.skadnetwork"},
+                {SKAdNetworkIdentifier= "m5mvw97r93.skadnetwork"},
+                {SKAdNetworkIdentifier= "vcra2ehyfk.skadnetwork"},
+                {SKAdNetworkIdentifier= "238da6jt44.skadnetwork"},
+                {SKAdNetworkIdentifier= "9yg77x724h.skadnetwork"},
+                {SKAdNetworkIdentifier= "ecpz2srf59.skadnetwork"},
+                {SKAdNetworkIdentifier= "gvmwg8q7h5.skadnetwork"},
+                {SKAdNetworkIdentifier= "n66cz3y3bx.skadnetwork"},
+                {SKAdNetworkIdentifier= "nzq8sh4pbs.skadnetwork"},
+                {SKAdNetworkIdentifier= "pu4na253f3.skadnetwork"},
+                {SKAdNetworkIdentifier= "v79kvwwj4g.skadnetwork"},
+                {SKAdNetworkIdentifier= "yrqqpx2mcb.skadnetwork"},
+                {SKAdNetworkIdentifier= "z4gj7hsk7h.skadnetwork"},
+                {SKAdNetworkIdentifier= "f7s53z58qe.skadnetwork"},
+                {SKAdNetworkIdentifier= "7953jerfzd.skadnetwork"},
+
+            }
+
+        },
+
+    },
+    
+}

@@ -1,0 +1,6 @@
+name:PRESET 3- GAMING 60 FPS
+tdp:20
+cpu:3200
+gpu:DEFAULT
+fps:60
+canDelete:false
