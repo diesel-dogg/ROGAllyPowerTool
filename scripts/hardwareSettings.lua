@@ -33,6 +33,8 @@ local myMath={
 --fwd refs--
 local ryzenadjPath, rtssCLIPath, powerPlansPath
 
+local staticGfxClockValue=800
+
 ------------------------------
 --function to set the CPU clock in mhz for all power profiles on AC and DC
 function hardwareSettings.setCPUClock(clock)
@@ -87,7 +89,7 @@ end
 --function accepts a tdp in watts and converts it into milliwatts and applies stapm, fast and slow TDP using ryzenadj
 function hardwareSettings.setTDP(tdp)
     --add clause to prevent setting extreme values
-    if(tdp>25 or tdp<7)then
+    if(tdp>30 or tdp<7)then
         toast.showToast("Current value  might be unsafe. Setting safe default")
         hardwareSettings.setTDP(15)
         return
@@ -135,7 +137,7 @@ function hardwareSettings.getTDP()
 
     --find value of tdp identifier and return
     for i=1, #columns do
-        if(columns[i]=="0x0010")then--use 008 instead of 000. This column seems to correspond to PL2 so it makes more sense to use this as we are aiming for PL1=PL2
+        if(columns[i]=="0x0010")then--use 0010 instead of 000. This column seems to correspond to PL2 so it makes more sense to use this as we are aiming for PL1=PL2
             file:close()--IMPORTANT to close before returning
             return myMath.round(columns[i+4])
         end
@@ -151,7 +153,6 @@ function hardwareSettings.setGfxClock(clock)
     if(clock>2700 or clock<400)then
         toast.showToast("Current value  might be unsafe. Setting safe default")
         hardwareSettings.setGfxClock(800)
-        hardwareSettings.currentGfxClock=800--update the value of the variable that we use to keep track of gfx clock
         return
     end
 
@@ -162,40 +163,19 @@ function hardwareSettings.setGfxClock(clock)
 
    --make the command structure:
     local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --gfx-clk='..clock
-    os.execute(ryzenCommand)
-    hardwareSettings.currentGfxClock=clock--update the value of the variable that we use to keep track of gfx clock
+    local result=os.execute(ryzenCommand)
+
+    --if ryzenAdj command indicates that it was successful, update our local variable that we are using to track the current static clock value
+    if(result==0)then--0 means no error and success
+        staticGfxClockValue=clock
+    end
 end
 
 ---------------------------
+
+--simply return the local variable that we are using in this script to track the value of the static clock. 
 function hardwareSettings.getGfxClock()
-    --start by writing the dump file from ryzenadj with all current values
-    hardwareSettings.writeRyzenadjInfo()
-
-    local tmpfile = "C:\\ROGAllyPowerTool\\temp.txt"
-
-    local file=io.open(tmpfile,"r")
-
-     --while testing on non-windows system, there will not exist such as file, so abort the function and return NA
-    if(not file)then
-        return "?"
-    end
-
-    local value = nil
-    local columns ={}
-    for line in file:lines() do
-        for word in string.gmatch(line, "%S+") do
-            table.insert(columns, word)
-        end
-    end
-
-    for i=1, #columns do
-        if(columns[i]=="0x0354")then--code for gfx clock experimentally determined
-            file:close()--IMPORTANT to close before returning
-            return myMath.round(columns[i+4])
-        end
-    end
-
-    file:close()
+    return staticGfxClockValue
 end
 ------------------------
 
@@ -305,12 +285,5 @@ if success then
     lfs.mkdir( "ROGAllyPowerTool" )
     lfs.mkdir( "ROGAllyPowerTool/User Profiles" )
 end
-
---while for all other things like TDP, CPU clock etc we use actual values from ryzenadj or pwrcfg, with the gfx clock, the value provided
---by the registers of ryzenadj is a transient value and not the exact value that is set. Hence, we will only be reading the actual value just one time
---in the makeMainMenu function and then storing it in this local var below. We will then only work with this variable throughout the code.
-hardwareSettings.currentGfxClock=nil
-hardwareSettings.currentGfxClock=hardwareSettings.getGfxClock()--read the ACTUAL value from the ryzenadj registers just once
-
 
 return hardwareSettings

@@ -127,7 +127,7 @@ function makeMainMenu(shouldFadeIn)
     mainMenu:addButton({id="gpuDown",xRelative=414,yRelative=560,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
     --menu gpu clock text
-    local value=hardwareSettings.currentGfxClock
+    local value=hardwareSettings.getGfxClock()
     if(value==nil)then
         value="?"
     end
@@ -143,14 +143,14 @@ function makeMainMenu(shouldFadeIn)
    
     mainMenu:getItemByID("gpuUp").callbackUp=function()
                                                      soundManager.playButtonClickSound()
-                                                     hardwareSettings.setGfxClock(hardwareSettings.currentGfxClock+200) 
-                                                     mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.currentGfxClock.." MHz"
+                                                     hardwareSettings.setGfxClock(hardwareSettings.getGfxClock()+200) 
+                                                     mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.getGfxClock().." MHz"
                                                     end
 
     mainMenu:getItemByID("gpuDown").callbackUp=function()
                                                      soundManager.playButtonClickSound()
-                                                     hardwareSettings.setGfxClock(hardwareSettings.currentGfxClock-200) 
-                                                     mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.currentGfxClock.." MHz"
+                                                     hardwareSettings.setGfxClock(hardwareSettings.getGfxClock()-200) 
+                                                     mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.getGfxClock().." MHz"
                                                     end  
     -----------------                                                
     --FPS title
@@ -266,7 +266,7 @@ function makeMainMenu(shouldFadeIn)
     mainMenu:addButton({id="saveProfile",xRelative=270,yRelative=836,width=114,height=65,imageDownPath=nil,
             imageUpPath=assetName.greyButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
     mainMenu:getItemByID("saveProfile"):addTextDisplay({id="profilesButtonText",xRelative=0,yRelative=0,font=assetName.AMB, fontSize=textResource.fontM,
-    string="CREATE PROFILE", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=100}})
+    string="CREATE \nPROFILE", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={height=50}, align="center"})
 
     mainMenu:getItemByID("saveProfile").callbackUp=function()
                                                         soundManager.playButtonClickSound()
@@ -314,7 +314,7 @@ local function writeDataToProfile(profileName)
     end 
 
     local currentFPS=hardwareSettings.getFPSLimit()
-    if(tonumber(currentFPS)==nil)then
+    if(tonumber(currentFPS)==nil or tonumber(currentFPS)==0)then
         currentFPS="NO LIMIT"--default
     end    
 
@@ -332,7 +332,7 @@ local function writeDataToProfile(profileName)
         toast.showToast("Saved profile "..profileName)
     else
         -- Handle the error if the file couldn't be opened
-        debugStmt.print("mainMenuScreen : Error opening file" )
+        -- debugStmt.print("mainMenuScreen : Error opening file" )
         toast.showToast("Invalid file name. Do not press ENTER key when inputting the profile name!")
     end
 end
@@ -479,7 +479,13 @@ function mainMenuScreen:create(event)
     Runtime:addEventListener("enterFrame",update)
 
     --finally, call the function that checks if the first launch steps were performed and if not, it shows the necessary instructions or otherwise, it proceeds to make the main menu
-    makeFirstLaunchDialog()
+    --Also,if debug mode is on, we skip this so that we don't get stuck on this locking menu on our testing devices:
+    if(not isDebugMode)then
+        makeFirstLaunchDialog()
+    else
+        makeMainMenu()
+        toast.showToast("MMS: DEBUG IS ON")
+    end
 end
 -----------------------
 function mainMenuScreen:destroy(event)

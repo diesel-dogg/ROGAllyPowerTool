@@ -203,7 +203,7 @@ end
 
 --Also set the global variable that is used in other scripts (eg, inGameUI) to enable/disable developer-specific debugging fatures.
 --NOTE: this boolean, when turned on, will also force turn on printdebugstmt feature regardless of the build environment
-isDebugMode=true
+isDebugMode=false
 levelCount=10
 isPlacementModeOn=false--global boolean that would tell if placement mode should be on or off. This is toggled by Q in the gameworld is used for pausing physics when setting up levels, placing objects etc. 
 

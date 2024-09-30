@@ -72,7 +72,7 @@ function splashScreen:create(event)
   	,width=500, align="center"})	
 
   --add copyright notice
-  display.newAutoSizeText({parent=group,text=textResource.copyrightText, x=width/2, y=height-200-getYCompensation(), font=assetName.AMR, fontSize=textResource.fontXS})	
+  display.newAutoSizeText({parent=group,text=textResource.copyrightText, x=width/2, y=height-50-getYCompensation(), font=assetName.AMR, fontSize=textResource.fontXS})	
 
   --add update Listener 
   Runtime:addEventListener("enterFrame",update)	
