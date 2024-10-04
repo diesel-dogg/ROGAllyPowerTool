@@ -41,6 +41,7 @@ local myMath={
 }
 -----------------------fwd refs:---
 local mainMenu, makeProfileSaveMenu,makeFirstLaunchDialog
+local changesBlocked=false--this boolean is toggled with help of a 1s timer to prevent rapid input from user
 
 -- level selection menu containing all levels in game.
 function makeMainMenu(shouldFadeIn)
@@ -72,12 +73,30 @@ function makeMainMenu(shouldFadeIn)
     
    
     mainMenu:getItemByID("tdpUp").callbackUp=function()
+                                                    --block of code below will be used in all value up/value down options. It returns without proceding if the boolean was raised and otherwise starts a blocking timer to prevent input for the next 1 s
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end
+
                                                      soundManager.playButtonClickSound()
                                                      hardwareSettings.setTDP(hardwareSettings.getTDP()+1)  
                                                      mainMenu:getItemByID("tdpText").text=""..hardwareSettings.getTDP().." W"
                                                     end
 
     mainMenu:getItemByID("tdpDown").callbackUp=function()
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end
                                                      soundManager.playButtonClickSound()
                                                      hardwareSettings.setTDP(hardwareSettings.getTDP()-1)
                                                      mainMenu:getItemByID("tdpText").text=""..hardwareSettings.getTDP().." W"
@@ -104,13 +123,31 @@ function makeMainMenu(shouldFadeIn)
     
    
     mainMenu:getItemByID("cpuUp").callbackUp=function()
-                                                     soundManager.playButtonClickSound()
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end 
+
+                                                    soundManager.playButtonClickSound()
                                                      hardwareSettings.setCPUClock(hardwareSettings.getCPUClock()+200) 
                                                      mainMenu:getItemByID("cpuSpeedText").text=""..hardwareSettings.getCPUClock().." MHz"
                                                     end
 
     mainMenu:getItemByID("cpuDown").callbackUp=function()
-                                                     soundManager.playButtonClickSound()
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end 
+
+                                                    soundManager.playButtonClickSound()
                                                      hardwareSettings.setCPUClock(hardwareSettings.getCPUClock()-200) 
                                                      mainMenu:getItemByID("cpuSpeedText").text=""..hardwareSettings.getCPUClock().." MHz"
                                                     end  
@@ -142,13 +179,31 @@ function makeMainMenu(shouldFadeIn)
     
    
     mainMenu:getItemByID("gpuUp").callbackUp=function()
-                                                     soundManager.playButtonClickSound()
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end 
+
+                                                    soundManager.playButtonClickSound()
                                                      hardwareSettings.setGfxClock(hardwareSettings.getGfxClock()+200) 
                                                      mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.getGfxClock().." MHz"
                                                     end
 
     mainMenu:getItemByID("gpuDown").callbackUp=function()
-                                                     soundManager.playButtonClickSound()
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end 
+
+                                                    soundManager.playButtonClickSound()
                                                      hardwareSettings.setGfxClock(hardwareSettings.getGfxClock()-200) 
                                                      mainMenu:getItemByID("gpuClockText").text=""..hardwareSettings.getGfxClock().." MHz"
                                                     end  
@@ -202,6 +257,16 @@ function makeMainMenu(shouldFadeIn)
                                                     else
                                                         toSet=0 
                                                     end                            
+
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end
+
                                                     soundManager.playButtonClickSound()
                                                     hardwareSettings.setFPSLimit(toSet)
 
@@ -237,6 +302,16 @@ function makeMainMenu(shouldFadeIn)
                                                     else
                                                         toSet=0 
                                                     end                            
+
+                                                    if(changesBlocked)then
+                                                        return
+                                                    else
+                                                        changesBlocked=true
+                                                        timerService.addTimer(1000,function()
+                                                                                    changesBlocked=false
+                                                                                end)
+                                                    end
+                                                    
                                                     soundManager.playButtonClickSound()
                                                     hardwareSettings.setFPSLimit(toSet)
 
@@ -339,7 +414,7 @@ end
 -------------------------------------------------------------------
 
 function makeProfileSaveMenu()
-    local textBox=native.newTextBox( 270, 425, 400, 100)
+    local textBox=native.newTextBox( 270, 500, 400, 100)
     textBox.isEditable = true
 
     local saveMenu=menuMaker.newMenu({name="saveMenu",x=width*0.5-540*0.5,y=height*0.5-400*0.5,masterImageGroup=nil, baseImagePath=assetName.dialogBase,
@@ -348,6 +423,10 @@ function makeProfileSaveMenu()
     --title
     saveMenu:addTextDisplay({id="title",xRelative=270,yRelative=50,font=assetName.AMB,fontSize=textResource.fontXL,string="CREATE NEW PROFILE",
         colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=500}})
+
+    --text
+    saveMenu:addTextDisplay({id="body",xRelative=270,yRelative=137,font=assetName.AMR,fontSize=textResource.fontS,
+            string="Enter a name for the profile by clicking inside the text box below.",colour={r=132/255,g=82/255,b=82/255},width=500,align="center"})
 
     --apply btn
     saveMenu:addButton({id="saveButton",xRelative=120,yRelative=330,width=114,height=65,imageDownPath=nil,
