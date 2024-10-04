@@ -49,8 +49,13 @@ function makeMainMenu(shouldFadeIn)
     baseImageWidth=540,baseImageHeight=900})
     
     --menu title text
-	mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=66,font=assetName.AMB,fontSize=textResource.fontXL,string="QUICK SETTINGS",
-        colour={r=90/255,g=103/255,b=121/255}})
+    if(hardwareSettings.isRunAsAdmin())then
+    	mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=66,font=assetName.AMB,fontSize=textResource.fontXL,string="QUICK SETTINGS",
+            colour={r=90/255,g=103/255,b=121/255},sizeLimit={width=500}})
+    else
+        mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=66,font=assetName.AMB,fontSize=textResource.fontXL,string="APP NOT RUN AS ADMIN!!",
+            colour={r=132/255,g=82/255,b=82/255},sizeLimit={width=500}})
+    end
     -----------------
     --tdp title
     mainMenu:addTextDisplay({id="tdpTitle",xRelative=270,yRelative=168,font=assetName.AMR,fontSize=textResource.fontM,string="TDP",
