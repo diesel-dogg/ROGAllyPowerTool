@@ -24,6 +24,7 @@ By limiting the CPU on per-game basis and assigning only a reasonable TDP limit 
 - The ADVANCED menu of the app further allows users to reinstall the custom power profiles that are required for correct operation of the CPU clock limit or restore the default ACSE power profiles. 
 - App is programmed to use minimal CPU and GPU resources and rendering is paused when there is no activity. The app window is fully resizeable so that UI elements are not hidden on lower resolutions and users can adjust the size as needed. 
 - UI is specifically designed to be conveniently navigated with touch input as well as mouse. 
+- User created profiles are stored inside a subdirectory at the path C:/ROGAllyPowerTool. Presets are stored in a subdirectory at the /Resources path inside application directory. 
 
 # LIMITATIONS:
 - The CPU clock limits don’t seem to stick when the device is connected to AC power. I have done all the obvious steps and am applying limits for both AC and DC but I don’t currently have a fix for this. At any rate, limiting power use when on AC is not something that I imagine users need to care about. On battery, everything works. 
@@ -37,3 +38,4 @@ By limiting the CPU on per-game basis and assigning only a reasonable TDP limit 
 # BUILDING
 I will be uploading prebuilt non-debug releases for windows but if you'd like to build, you will need to setup the full solar2d environment on an x86 windows machine. See their website for guidance.
 A custom LUA library is being used as of v1.2.0 to enable some system calls which are otherwise blocked in Solar2D. If anyone should like to build the app, they can contact me for the modified DLLs.
+
