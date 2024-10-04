@@ -114,14 +114,15 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
     --charging limit  down button 
     advancedMenu:addButton({id="chargingRateDown",xRelative=414,yRelative=238,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
    
-    local value=hardwareSettings.getChargingRate()
-    if(value==nil)then
-        value="?"
+    local currentChargingRate=hardwareSettings.getChargingRate()
+    if(currentChargingRate==nil)then
+        currentChargingRate="?"
+        advancedMenu:addTextDisplay({id="chargingRateText", xRelative=270, yRelative=238, font=assetName.AMR, fontSize=textResource.fontL,
+            string=""..currentChargingRate, colour={r=132/255,g=82/255,b=82/255}})
+    else
+        advancedMenu:addTextDisplay({id="chargingRateText", xRelative=270, yRelative=238, font=assetName.AMR, fontSize=textResource.fontL,
+            string=""..currentChargingRate.."%", colour={r=132/255,g=82/255,b=82/255}})
     end
-    local currentChargingRate=value--fetching a value here since we need to go over multiple cases to set charging rate values based on current value in button action so we cannot keep fetching
-
-    advancedMenu:addTextDisplay({id="chargingRateText", xRelative=270, yRelative=238, font=assetName.AMR, fontSize=textResource.fontL,
-    string=""..currentChargingRate, colour={r=132/255,g=82/255,b=82/255}})
 
     advancedMenu:getItemByID("chargingRateUp").callbackUp=function()
                                                     local toSet
@@ -164,7 +165,7 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
                                                     if(currentChargingRate==nil)then
                                                         advancedMenu:getItemByID("chargingRateText").text="?"
                                                     else
-                                                        advancedMenu:getItemByID("chargingRateText").text=""..currentChargingRate
+                                                        advancedMenu:getItemByID("chargingRateText").text=""..currentChargingRate.."%"
                                                     end
                                                 end
 
@@ -209,7 +210,7 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
                                                     if(currentChargingRate==nil)then
                                                         advancedMenu:getItemByID("chargingRateText").text="?"
                                                     else
-                                                        advancedMenu:getItemByID("chargingRateText").text=""..currentChargingRate
+                                                        advancedMenu:getItemByID("chargingRateText").text=""..currentChargingRate.."%"
                                                     end
                                                 end                                            
     --------

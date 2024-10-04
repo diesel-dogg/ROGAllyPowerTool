@@ -1,5 +1,5 @@
 # ABOUT THE PROJECT:
-Simple win32 program to set TDP, CPU clock, GPU clock, FPS limit (and probably more features in the future) specifically made for the ROG Ally handhelds to customise power management on per-game basis. 
+Simple win32 program to set TDP, CPU clock, GPU clock, FPS limit, maximum battery charge percentage etc. specifically made for the ROG Ally handhelds to customise power management on per-game basis. 
 
 # ROG Ally Power Tool:
 
@@ -20,13 +20,14 @@ By limiting the CPU on per-game basis and assigning only a reasonable TDP limit 
 - Checks are in place to prevent very high or low values from being set for any of the parameters. 
 - Users can define any combination of the above as a profile with the click of a button. These profiles can be accessed and applied as needed from the PROFILES menu. This menu also includes 3 preset profiles. 
 - The user-created profiles can be deleted or overwritten with ease. 
-- The ADVANCED menu of the app allows users to reinstall the custom power profiles that are required for correct operation of the CPU clock limit or restore the default ACSE power profiles. 
+- The ADVANCED menu will allow the user to set the maximum battery charge percentage and configure the app to run on Windows startup through a scheduled task.
+- The ADVANCED menu of the app further allows users to reinstall the custom power profiles that are required for correct operation of the CPU clock limit or restore the default ACSE power profiles. 
 - App is programmed to use minimal CPU and GPU resources and rendering is paused when there is no activity. The app window is fully resizeable so that UI elements are not hidden on lower resolutions and users can adjust the size as needed. 
 - UI is specifically designed to be conveniently navigated with touch input as well as mouse. 
 
 # LIMITATIONS:
 - The CPU clock limits don’t seem to stick when the device is connected to AC power. I have done all the obvious steps and am applying limits for both AC and DC but I don’t currently have a fix for this. At any rate, limiting power use when on AC is not something that I imagine users need to care about. On battery, everything works. 
-- All OS level commands that are executed will cause a terminal window to flash momentarily which can be a little annoying at first. This is due to the security restrictions of the sandboxed Lua environment in which the app is running. I am looking to work around this problem for a future release. 
+- Due to limitations of the LUA sandboxed environment in which the code is being executed, I am unable to use mappings for native Windows libraries and most operations are achieved through direct Windows commands which means that terminal windows will occasionally flash above the app's window-- albeit only momentarily.
 
 # ACKNOWLEDGEMENTS:
 - RyzenAdj, RTSSCLI are the command line tools used for TDP control and RTSS interface. 
@@ -35,3 +36,4 @@ By limiting the CPU on per-game basis and assigning only a reasonable TDP limit 
 
 # BUILDING
 I will be uploading prebuilt non-debug releases for windows but if you'd like to build, you will need to setup the full solar2d environment on an x86 windows machine. See their website for guidance.
+A custom LUA library is being used as of v1.2.0 to enable some system calls which are otherwise blocked in Solar2D. If anyone should like to build the app, they can contact me for the modified DLLs.
