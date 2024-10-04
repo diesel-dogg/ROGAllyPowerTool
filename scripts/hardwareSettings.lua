@@ -31,7 +31,7 @@ local myMath={
 }
 
 --fwd refs--
-local ryzenadjPath, rtssCLIPath, powerPlansPath
+local ryzenadjPath, rtssCLIPath, powerPlansPath, exePath, modifyXmlCommand
 
 local staticGfxClockValue=800
 
@@ -55,36 +55,41 @@ function hardwareSettings.setCPUClock(clock)
     local c1="powercfg -setacvalueindex scheme_all sub_processor PROCFREQMAX".." "..clock
     local c2="powercfg -setdcvalueindex scheme_all sub_processor PROCFREQMAX".." "..clock
     local c3="powercfg -S scheme_current"
-    os.execute(c0.." && "..c1.." && "..c2.." && "..c3)--combining commands as when running the os.execute, the cmd prompt window flashes too many times otherwise
+
+    local handle = io.popen(c0.." && "..c1.." && "..c2.." && "..c3)
+    if handle then
+        handle:close()
+    else
+        debugStmt.print("hardwareSettings: failed to execute command for setting cpu")
+    end
+
 end
 
 -----------------------------
 
 --function to get the current CPU clock reading
 function hardwareSettings.getCPUClock()
-    --start by querying the powercfg and dumping the sub processor data into a file
-    local tmpfile = "C:\\ROGAllyPowerTool\\cpu.txt"
-    os.execute("powercfg /qh scheme_current SUB_PROCESSOR PROCFREQMAX > "..tmpfile)
+    local handle=io.popen("powercfg /qh scheme_current SUB_PROCESSOR PROCFREQMAX", "r")
+    local output
 
-    --attempt to open the file
-    local file=io.open(tmpfile,"r")
-
-    --while testing on non-windows system, there will not exist such as file, so abort the function and return NA
-    if(not file)then
-        return "?"
+    --if valid popen handle was available, fetch and parse the output with string matching to pick up CPU clock
+    if handle then
+        output=handle:read("*a")
+        handle:close()
+    else
+        debugStmt.print("hardwareSettings: failed to execute command for getting cpu clock")
     end
 
-    local content=file:read("*a")
-
-    local cpuClock= content:match("Current DC Power Setting Index: 0x(%x+)")--match pattern for where the clock value appears in the file
-    cpuClock = tonumber(cpuClock, 16) -- convert hexadecimal to decimal
-
-    file:close()
-
+    local cpuClock= output:match("Current DC Power Setting Index: 0x(%x+)")--match pattern for where the clock value appears in the file
+    
+    --the popen command is successful even when the output was not in expected format and cpuClock could not be read in the string, hence the safeguard:
+    if(cpuClock)then
+        cpuClock = tonumber(cpuClock, 16) -- convert hexadecimal to decimal
+    end
+    
     return cpuClock
 end
 -----------------------------
-
 
 --function accepts a tdp in watts and converts it into milliwatts and applies stapm, fast and slow TDP using ryzenadj
 function hardwareSettings.setTDP(tdp)
@@ -99,51 +104,40 @@ function hardwareSettings.setTDP(tdp)
 
     --make the command structure:
     local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --stapm-limit='..tdp..' --fast-limit='..tdp..' --slow-limit='..tdp..' --apu-slow-limit='..tdp
-    os.execute(ryzenCommand)
+    local handle=io.popen(ryzenCommand)--though the output of this command isn't really required, it is best to have a handle for it to block asynchronous execution that is typical of io.popen. This wasn't a problem with os.execute
+    local output=handle:read("*a")
+    handle:close()
 end
 ------------------------------------
 
---before using any of the get functions below, first call this function without fail! It will write all the current setting values
---into a text file located in c/rogallpowertool/temp.txt
-function hardwareSettings.writeRyzenadjInfo()
-    --make the command structure:
-    local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --dump-table'
-    local tmpfile = "C:\\ROGAllyPowerTool\\temp.txt"
-    local exit = os.execute(ryzenCommand .. ' > ' .. tmpfile)
-end
--------------------------
-
 function hardwareSettings.getTDP()
-    --start by writing the dump file from ryzenadj with all current values
-    hardwareSettings.writeRyzenadjInfo()
+    local handle=io.popen('"'..ryzenadjPath..'ryzenadj.exe"'..' --dump-table',"r")
+    local output 
 
-    local tmpfile = "C:\\ROGAllyPowerTool\\temp.txt"
+    --if handle was available, extract the output and put it into a table as columns and the iterate over the table
+    --to fetch the required parameter. Round off that value and return
+    if handle then
+        output=handle:read("*a")
+        handle:close()
 
-    --code below reads in all values into a table
-    local file=io.open(tmpfile,"r")
-
-    --while testing on non-windows system, there will not exist such as file, so abort the function and return NA
-    if(not file)then
-        return "?"
-    end
-
-    local value = nil
-    local columns ={}
-    for line in file:lines() do
-        for word in string.gmatch(line, "%S+") do
-            table.insert(columns, word)
+        local columns = {}
+        for line in output:gmatch("([^\n]+)\n?") do
+            for word in string.gmatch(line, "%S+") do
+                table.insert(columns, word)
+            end
         end
-    end
 
-    --find value of tdp identifier and return
-    for i=1, #columns do
-        if(columns[i]=="0x0010")then--use 0010 instead of 000. This column seems to correspond to PL2 so it makes more sense to use this as we are aiming for PL1=PL2
-            file:close()--IMPORTANT to close before returning
-            return myMath.round(columns[i+4])
+        --find value of tdp identifier and return
+        for i=1, #columns do
+            if(columns[i]=="0x0010")then--use 0010 instead of 000. This column seems to correspond to PL2/"power limit slow" so it makes more sense to use this as we are aiming for PL1=PL2
+                return myMath.round(columns[i+4])
+            end
         end
+    else
+        debugStmt.print("hardwareSettings: failed to execute ryzenAdj info dump")
     end
 
-    file:close()
+    return nil
 end
 
 -------------------------------
@@ -163,11 +157,19 @@ function hardwareSettings.setGfxClock(clock)
 
    --make the command structure:
     local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --gfx-clk='..clock
-    local result=os.execute(ryzenCommand)
+    local handle=io.popen(ryzenCommand)
+    
+    local output
+    if handle then
+        output=handle:read("*a")
+        handle:close()
 
-    --if ryzenAdj command indicates that it was successful, update our local variable that we are using to track the current static clock value
-    if(result==0)then--0 means no error and success
-        staticGfxClockValue=clock
+        --the output typically is something like "successfully set gfx clock to 1000" etc we can check if string contained the required clocl value to know
+        --if the command executed successfully. 
+        if(string.find(output,""..clock))then
+            debugStmt.print("hardwareSettings: gfx clock was successfully set and output was "..output)
+            staticGfxClockValue=clock--update clock value
+        end
     end
 end
 
@@ -183,7 +185,7 @@ function hardwareSettings.resetGfx()
     local tmpfile = "C:\\ROGAllyPowerTool\\display.txt"
     --notice how we need to use an envionrment variable to obtain the correct path of the pnputil since solar2d is 32 bit and there is no pnputil in 32 bit
     local command = "%windir%\\sysnative\\pnputil.exe /enum-devices /class DISPLAY > "..tmpfile
-    os.execute(command)
+    io.popen(command)
     
 
     --now attempt to open the file
@@ -207,7 +209,7 @@ function hardwareSettings.resetGfx()
 
     local command = '%windir%\\sysnative\\pnputil.exe /restart-device '..'"'..(displayDeviceID)..'"'
     debugStmt.print("command is : "..command)
-    os.execute(command)
+    io.popen(command)
 
     file:close()
     os.exit()--since the display device was reset, rendering will hang on the app so we should exit and then restart if needed
@@ -218,33 +220,147 @@ function hardwareSettings.setFPSLimit(limit)
     local rtssCommand='"'..rtssCLIPath..'rtsscli.exe"'..' limit:set '..limit
     -- debugStmt.print("executing RTSS command "..rtssCommand)
 
-    os.execute(rtssCommand)
+    local handle=io.popen(rtssCommand)--using a handle even though not necessary to block the execution as popen works asynchronously.
+    local output=handle:read("*a")
+    handle:close()
 end
 
 --------------
 function hardwareSettings.getFPSLimit()
-    --run the get command and dump the output in a text file
     local rtssCommand='"'..rtssCLIPath..'rtsscli.exe"'..' limit:get'
-    local tmpfile = "C:\\ROGAllyPowerTool\\rtss.txt"
-    local exit = os.execute(rtssCommand .. ' > ' .. tmpfile)
+    local handle = io.popen(rtssCommand)
 
-    --read the number from file
-    local file=io.open(tmpfile,"r")
+    local output
+    local fps
 
-    if(not file)then
-        return nil
+    if handle then
+        output=handle:read("*a")
+        handle:close()
+        fps=tonumber(output)
+    else
+        debugStmt.print("hardwareSettings: failed to execute command for getting fps limit")
     end
 
-    -- debugStmt.print("file with name was successfully opened "..tmpfile)
-
-    local fps=tonumber(file:read("*a"))
-
-    file:close()
-   
     return fps
+end
+-------------------------
+
+function hardwareSettings.getChargingRate()
+     -- Build the command for registry query, using /reg:64 to force querying 64-bit registry view
+    local command = 'cmd.exe /c "reg query \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /reg:64 2>nul"'
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+
+    -- Parse the output to get the value of ChargingRate
+    local chargingRateValue = result:match("ChargingRate%s+REG_%w+%s+(%w+)")
+    
+    if chargingRateValue then
+        -- Convert hexadecimal to decimal
+        local decimalValue = tonumber(chargingRateValue, 16)
+        return myMath.round(decimalValue)
+    else
+        return nil, "Error: Could not find the ChargingRate key or there was an error executing the command."
+    end
 end
 
 -------------------------
+function hardwareSettings.setChargingRate(newValue)
+    -- Convert the new value to hexadecimal if it is given in decimal
+    local hexValue = string.format("0x%X", newValue)
+
+    -- Build the command for registry edit, using /reg:64 to force editing 64-bit registry view
+    local command = 'cmd.exe /c "reg add \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /t REG_DWORD /d ' .. hexValue .. ' /f /reg:64"'
+    local handle = io.popen(command)
+    local result = handle:read("*a")
+    handle:close()
+
+    -- Check if the output indicates success
+    if result:match("The operation completed successfully") then
+        return true, "ChargingRate value successfully updated."
+    else
+        return false, "Error: Could not update the ChargingRate value. Please check permissions or input."
+    end
+end
+
+-------------------------
+-- Function to toggle startup registration for the app
+function hardwareSettings.toggleStartup(shouldEnable)
+    -- Define task name and the path to the XML file
+    local taskName = "ROG Ally Power Tool"
+    local xmlPath = system.pathForFile( "taskScheduler/TaskConfig.xml" ,system.ResourceDirectory )
+
+     -- Modify the <Command> tag in the XML file
+    if not modifyXmlCommand(xmlPath, '"'..exePath..'ROG Ally Power Tool.exe"') then
+        return
+    end
+
+    local command
+    if shouldEnable then
+        -- Command to import the task from the XML file into Task Scheduler
+        command = 'schtasks /create /tn "' .. taskName .. '" /xml "' .. xmlPath .. '" /f'
+    else
+        -- Command to remove the task from Task Scheduler
+        command = 'schtasks /delete /tn "' .. taskName .. '" /f'
+    end
+
+    -- Print the command being executed for debugging
+    debugStmt.print("hardwareSettings: Executing Command: " .. command)
+
+    -- Execute the command using os.execute and print the result directly
+    local result = os.execute(command)
+
+    -- Check if the task was added/removed successfully (0 indicates success)
+    if result == 0 then
+        if shouldEnable then
+            toast.showToast("Startup task added successfully!")
+            debugStmt.print("hardwareSettings: Task successfully added to Task Scheduler with battery support.")
+        else
+            toast.showToast("Startup task removed")
+            debugStmt.print("hardwareSettings: Task successfully removed from Task Scheduler.")
+        end
+    else
+        debugStmt.print("hardwareSettings: Error- Could not modify the task. Exit code: " .. tostring(result) .. ". Please check permissions or syntax.")
+    end
+end
+
+---------------------------
+-- Function to check if the application is configured to start at Windows launch through win task scheduling service
+function hardwareSettings.isTaskPresent()
+    local taskName= "ROG Ally Power Tool"
+    -- Command to query the task in Task Scheduler
+    local command = 'schtasks /query /tn "' .. taskName .. '" 2>nul'
+
+    -- Execute the command using os.execute
+    local result = os.execute(command)
+
+    -- Check if the exit code is 0, indicating the task is found
+    if result == 0 then
+        debugStmt.print("hardwareSettings: Task '" .. taskName .. "' is present.")
+        return true
+    else
+        debugStmt.print("hardwareSettings: Task '" .. taskName .. "' is not present.")
+        return false
+    end
+end
+
+---------------------------
+--attempt to run net session to work out if admin elevation available
+function hardwareSettings.isRunAsAdmin()
+    -- We use 'net session' because it requires admin privileges to run
+    local result = os.execute('net session >nul 2>nul')
+
+    if result == 0 then
+        -- Command succeeded, meaning the application is running as admin
+        debugStmt.print("hardwareSettings: Application is running with administrator privileges.")
+        return true
+    else
+        -- Command failed, meaning the application is NOT running as admin
+        debugStmt.print("hardwareSettings: Application is NOT running with administrator privileges.")
+        return false
+    end
+end
+--------------------------
 --install/reinstall custom power plans button. The Asus armoury crate power plans are non compliant with cpu settings and other powercfg commands so 
 --this batch file creates power plans with the same IDs and names but standard windows power saver settings so that we can apply our changes to them. 
 --by duplicating the windows power saving setting, we remove the battery slider and prevent windows from overriding cpu settings.
@@ -263,6 +379,35 @@ function hardwareSettings.restoreAsusPlans()
     local output=os.execute(powerPlansCommand)
 end
 
+------------------------HELPERS------------------
+--this function will be called by toggleStartup function to modify the path of the command that points to the app's executable
+--during runtime as there's no way to ensure that it will be at the exact same path on all users' systems.
+function modifyXmlCommand(xmlFilePath,newCommandPath)
+    -- Open the XML file for reading
+    local file = io.open(xmlFilePath, "r")
+    if not file then
+        return false
+    end
+
+    -- Read the content of the XML file
+    local xmlContent = file:read("*all")
+    file:close()
+
+    -- Replace the existing <Command> path with the new command path
+    local modifiedXmlContent = xmlContent:gsub("<Command>.-</Command>", "<Command>" .. newCommandPath .. "</Command>")
+
+    -- Open the XML file for writing and save the modified content
+    file = io.open(xmlFilePath, "w")
+    if not file then
+        return false
+    end
+    file:write(modifiedXmlContent)
+    file:close()
+
+    debugStmt.print("hardwareSettings: Successfully modified the <Command> section of the XML.")
+    return true
+end
+
 ---------------------beyond this point is only the code that needs to be executed exactly once for init---------------
 --create the path variable for where we store ryzenadj.exe
 ryzenadjPath=system.pathForFile( "ryzenadj/ryzenadj.exe" ,system.ResourceDirectory )
@@ -278,6 +423,11 @@ rtssCLIPath=rtssCLIPath:gsub("rtsscli.exe","")
 powerPlansPath=system.pathForFile( "powerPlans/reinstallCustomPlans.bat" ,system.ResourceDirectory )
 powerPlansPath=powerPlansPath:gsub("/","\\")
 powerPlansPath=powerPlansPath:gsub("reinstallCustomPlans.bat","")
+
+--executable path. This will be used to add the exe to start up registry
+exePath=powerPlansPath:gsub("Resources\\powerPlans\\","")
+
+debugStmt.print("hardwareSettings: path of exe is "..exePath)
 
 --use lfs to make a directory in C drive where we will store the temp file with values of all ryzenadj parameters each time we use that program
 local success = lfs.chdir( "C:/" )
