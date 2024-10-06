@@ -348,7 +348,11 @@ function getAlphabeticalTableOfProfilesFromPath(path)
 	    end
 	end
 
-	table.sort(tableOfPaths)
+	--modified sort function for table.sort that uses lower case conversion before sorting to make alphabetical sorting case-insensitive
+	table.sort(tableOfPaths, function(a, b)
+	    return string.lower(a) < string.lower(b)
+	end)
+
 	return tableOfPaths
 end
 
