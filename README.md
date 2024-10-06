@@ -1,6 +1,10 @@
 # ABOUT THE PROJECT:
 Simple win32 program to set TDP, CPU clock, GPU clock, FPS limit, maximum battery charge percentage etc. specifically made for the ROG Ally handhelds to customise power management on per-game basis. 
 
+
+![Screenshot (26)](https://github.com/user-attachments/assets/1f963d62-b618-42f6-8310-0335242d4f8b)
+
+
 # ROG Ally Power Tool:
 
 PLEASE INSTALL THE LATEST RELEASE AND RUN WITH ADMINISTRATOR PRIVILEGES ON YOUR ALLY DEVICE
@@ -38,4 +42,11 @@ By limiting the CPU on per-game basis and assigning only a reasonable TDP limit 
 # BUILDING
 I will be uploading prebuilt non-debug releases for windows but if you'd like to build, you will need to setup the full solar2d environment on an x86 windows machine. See their website for guidance.
 A custom LUA library is being used as of v1.2.0 to enable some system calls which are otherwise blocked in Solar2D. If anyone should like to build the app, they can contact me for the modified DLLs.
+
+
+![Screenshot (25)](https://github.com/user-attachments/assets/3a94d585-c5d7-45b5-a157-9cb9461b1e0a)
+
+![Screenshot (27)](https://github.com/user-attachments/assets/0c3ccfbb-7132-410e-a044-fd1d340ae30b)
+
+![Screenshot (28)](https://github.com/user-attachments/assets/2a797c8e-5e93-4945-b3b5-5981566cca60)
 
