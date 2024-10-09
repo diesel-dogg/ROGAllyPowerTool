@@ -3,7 +3,7 @@ application =
 
 	content =
 	{
-		width = 550,
+		width = 820,
 		height = 950, 
 		fps = 30,
 		shaderPrecision = "lowp",

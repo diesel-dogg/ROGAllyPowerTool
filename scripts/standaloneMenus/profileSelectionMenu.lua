@@ -41,7 +41,7 @@ local stringToKeyValue,readProfileTableFromFile, getAlphabeticalTableOfProfilesF
 function profileSelectionMenu.makeProfileSelectionMenu(callback1,shouldFadeIn)
 	callback=callback1
 
-	local profileMenu=menuMaker.newMenu({name="profileMenu",x=0,y=0,masterImageGroup=nil, baseImagePath=assetName.mainMenuBase,
+	local profileMenu=menuMaker.newMenu({name="profileMenu",x=135,y=0,masterImageGroup=nil, baseImagePath=assetName.mainMenuBase,
 		baseImageWidth=540,baseImageHeight=950,overlayAlpha=0.5})
 
 	--menu title text
@@ -70,7 +70,7 @@ function profileSelectionMenu.makeProfileSelectionMenu(callback1,shouldFadeIn)
 	ySeparation=140
 	buttonsPerRow=1
 	--NOTE: It is best to use a mac device and take a screenshot of the menu with button debugging turned on to get a proper idea for contentBound coordinates, xPadding, yPadding etc
-	local scrollContentBound={xMin=0,xMax=600, yMin=100, yMax=850}
+	local scrollContentBound={xMin=135,xMax=600+135, yMin=100, yMax=850}
 
 	--Before creating the buttons for user-created profiles, we need to determine the path in the internal resources where preset profiles are stored and then
 	--extract the profile tables for each preset profile and populate the preset buttons so that they appear on top always

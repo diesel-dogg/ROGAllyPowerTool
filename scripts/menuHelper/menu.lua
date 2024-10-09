@@ -90,7 +90,7 @@ local lastDebugObject=nil
 --this function only listens for the M key to toggle the debugging flag of the menu script. This function also allows scaling of objects in the menu
 --that were last moved. NOTE: This may not work for all objects. 
 local function moveKeyDebug(event)
-	if(event.phase=="up")then
+	if(event.phase=="up" and isDebugMode)then
 		if(event.descriptor=="m") then--this is a universal key for toggling the mouse-drag debugging of menu objects. See menu helper script
 			menu.menuDebug=not menu.menuDebug
 			toast.showToast("MENU: mouse-drag debugging is "..tostring(menu.menuDebug)..". Use < > to scale objects")

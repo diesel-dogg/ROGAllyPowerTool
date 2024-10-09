@@ -31,6 +31,9 @@ local assetName={
 	greyButtonLarge="assets/UI/mainMenu/".."greyButtonLarge.png",
 	greenButton="assets/UI/mainMenu/".."greenButton.png",
 
+	--advanced menu
+	advancedMenuBase="assets/UI/advancedMenu/".."advancedMenuBase.png",
+
 	--profile menu
 	profileButton="assets/UI/profileMenu/".."profileButton.png",
 
@@ -39,6 +42,9 @@ local assetName={
 	menuButton="assets/".."UI/".."menuButton.png",
 	dialogBase="assets/".."UI/".."dialogBase.png",
 	currencyIcon="assets/".."UI/".."currencyIcon.png",
+
+	sliderEnabled="assets/UI/mainMenu/".."sliderEnabled.png",
+	sliderDisabled="assets/UI/mainMenu/".."sliderDisabled.png",
 	---------------------
 
 	-- unlockMenu

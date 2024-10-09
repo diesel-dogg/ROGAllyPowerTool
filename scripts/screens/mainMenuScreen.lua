@@ -45,7 +45,7 @@ local changesBlocked=false--this boolean is toggled with help of a 1s timer to p
 
 -- level selection menu containing all levels in game.
 function makeMainMenu(shouldFadeIn)
-    mainMenu=menuMaker.newMenu({name="mainMenu",x=0,y=0,masterImageGroup=menuDisplayGroup, baseImagePath=assetName.mainMenuBase,
+    mainMenu=menuMaker.newMenu({name="mainMenu",x=135,y=0,masterImageGroup=menuDisplayGroup, baseImagePath=assetName.mainMenuBase,
     baseImageWidth=540,baseImageHeight=900})
     
     --menu title text
@@ -419,7 +419,7 @@ end
 -------------------------------------------------------------------
 
 function makeProfileSaveMenu()
-    local textBox=native.newTextBox( 270, 500, 400, 100)
+    local textBox=native.newTextBox( 270+135, 500, 400, 100)
     textBox.isEditable = true
 
     local saveMenu=menuMaker.newMenu({name="saveMenu",x=width*0.5-540*0.5,y=height*0.5-400*0.5,masterImageGroup=nil, baseImagePath=assetName.dialogBase,

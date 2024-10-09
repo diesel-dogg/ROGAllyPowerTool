@@ -23,7 +23,7 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>C:\Path\To\Your\App\ROG Ally Power Tool.exe</Command>
+      <Command>"\Users\shashwat\Desktop\ROGAllyPowerTool github\powerPlans\ROG Ally Power Tool.exe"</Command>
     </Exec>
   </Actions>
 </Task>

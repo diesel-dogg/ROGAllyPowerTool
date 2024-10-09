@@ -284,6 +284,107 @@ function hardwareSettings.setChargingRate(newValue)
 end
 
 -------------------------
+--this function will ideally return a table that has decimal values of the EnableUlps and StutterMode registry keys which are
+--to be used in an appropriate UI function to check and decide if the values were default or modified and give user correct options accordingly. 
+function hardwareSettings.getStutterModeAndULPS()
+   -- Query for ULPS (EnableUlps) value
+    local ulpsCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /reg:64 2>nul"'
+    local ulpsHandle = io.popen(ulpsCommand)
+    local ulpsResult = ulpsHandle:read("*a")
+    ulpsHandle:close()
+
+    -- Query for Stutter Mode (StutterMode) value
+    local stutterCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /reg:64 2>nul"'
+    local stutterHandle = io.popen(stutterCommand)
+    local stutterResult = stutterHandle:read("*a")
+    stutterHandle:close()
+
+    -- Debugging: Print raw results for troubleshooting
+    debugStmt.print("hardwareSettings: ULPS Registry Query Result:\n" .. ulpsResult)
+    debugStmt.print("hardwareSettings: StutterMode Registry Query Result:\n" .. stutterResult)
+
+    -- Parse the output to get the EnableUlps value
+    local ulpsValue = ulpsResult:match("EnableUlps%s+REG_DWORD%s+0x(%x+)")
+    
+    -- Parse the output to get the StutterMode value
+    local stutterModeValue = stutterResult:match("StutterMode%s+REG_DWORD%s+0x(%x+)")
+
+    -- Check if both values were successfully retrieved
+    if ulpsValue and stutterModeValue then
+        -- Convert hexadecimal to decimal
+        local ulpsDecimalValue = tonumber(ulpsValue, 16)
+        local stutterModeDecimalValue = tonumber(stutterModeValue, 16)
+
+        return {
+            ulps = ulpsDecimalValue,
+            stutterMode = stutterModeDecimalValue
+        }
+    else
+        -- Return error details if one or both values weren't found
+        if not ulpsValue then
+            debugStmt.print("hardwareSettings: Error- Could not find 'EnableUlps' key.")
+        end
+        if not stutterModeValue then
+            debugStmt.print("hardwareSettings: Error- Could not find 'StutterMode' key.")
+        end
+
+        return nil, "Error: Could not find one or both registry values (EnableUlps or StutterMode)."
+    end
+end
+-------------------------
+
+--this function disables both ulps and stutter mode
+function hardwareSettings.disableStutterModeAndULPS()
+    -- Command to set ULPS (EnableUlps) to 0
+    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 0 /f /reg:64"'
+    
+    -- Command to set Stutter Mode (StutterMode) to 0
+    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 0 /f /reg:64"'
+
+    -- Execute the commands
+    local ulpsHandle = io.popen(setULPSCommand)
+    local ulpsResult = ulpsHandle:read("*a")
+    ulpsHandle:close()
+
+    local stutterHandle = io.popen(setStutterModeCommand)
+    local stutterResult = stutterHandle:read("*a")
+    stutterHandle:close()
+
+    -- Check if both operations were successful
+    if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
+        return true, "ULPS and Stutter Mode have been successfully set to 0."
+    else
+        return false, "Error: Could not set ULPS and/or Stutter Mode to 0."
+    end
+end
+-------------------------
+
+--this function sets 2 for stutter mode and 1 for ulps thereby restoring defaults
+function hardwareSettings.restoreDefaultsStutterModeAndULPS()
+    -- Command to set ULPS (EnableUlps) to 1
+    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 1 /f /reg:64"'
+    
+    -- Command to set Stutter Mode (StutterMode) to 2
+    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 2 /f /reg:64"'
+
+    -- Execute the commands
+    local ulpsHandle = io.popen(setULPSCommand)
+    local ulpsResult = ulpsHandle:read("*a")
+    ulpsHandle:close()
+
+    local stutterHandle = io.popen(setStutterModeCommand)
+    local stutterResult = stutterHandle:read("*a")
+    stutterHandle:close()
+
+    -- Check if both operations were successful
+    if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
+        return true, "ULPS and Stutter Mode have been successfully set to defaults"
+    else
+        return false, "Error: Could not set ULPS and/or Stutter Mode to defaults"
+    end
+end
+-------------------------
+
 -- Function to toggle startup registration for the app
 function hardwareSettings.toggleStartup(shouldEnable)
     -- Define task name and the path to the XML file
