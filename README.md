@@ -48,7 +48,7 @@ A custom LUA library is being used from v1.2.0 onwards to enable some system cal
 
 ![Screenshot (25)](https://github.com/user-attachments/assets/3a94d585-c5d7-45b5-a157-9cb9461b1e0a)
 
-![Screenshot (27)](https://github.com/user-attachments/assets/0c3ccfbb-7132-410e-a044-fd1d340ae30b)
+![Screenshot (34)](https://github.com/user-attachments/assets/04eea871-d50a-4bfd-a343-6c00041496b4)
 
 ![Screenshot (28)](https://github.com/user-attachments/assets/2a797c8e-5e93-4945-b3b5-5981566cca60)
 
