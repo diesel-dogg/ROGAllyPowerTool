@@ -159,26 +159,26 @@ function makeMainMenu(shouldFadeIn)
 
     -----------------
     --gpu title
-    mainMenu:addTextDisplay({id="gpuTitle",xRelative=270,yRelative=500,font=assetName.AMR,fontSize=textResource.fontM,string="GPU STATIC CLOCK",
-        colour={r=90/255,g=103/255,b=121/255}})
+    mainMenu:addTextDisplay({id="gpuTitle",xRelative=270,yRelative=500,font=assetName.AMR,fontSize=textResource.fontM,string="GPU STATIC CLOCK \n (sleep-awake or restart device to unlimit!)",
+        colour={r=90/255,g=103/255,b=121/255}, align="center", width=540})
 
     --gpu up button 
-    mainMenu:addButton({id="gpuUp",xRelative=116,yRelative=560,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
+    mainMenu:addButton({id="gpuUp",xRelative=116,yRelative=575,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
 
     --gpu down button 
-    mainMenu:addButton({id="gpuDown",xRelative=414,yRelative=560,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
+    mainMenu:addButton({id="gpuDown",xRelative=414,yRelative=575,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
     --menu gpu clock text
     local value=hardwareSettings.getGfxClock()
     if(value==nil)then
         value="?"
     end
-    --we treat a readout of 800mhz as default, non-static clock so adding a clause to print accordingly
-    if(value==800)then
-        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=560, font=assetName.AMR, fontSize=textResource.fontL,
+    --GPU clock is not actually read from the ryzenAdj dump but picked up from a persisting veriable in the hardwareSettings script. A value of 0 is default and indicates no user-defined static clock
+    if(value==0)then
+        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575, font=assetName.AMR, fontSize=textResource.fontL,
         string="DEFAULT", colour={r=132/255,g=82/255,b=82/255}})
     else
-        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=560, font=assetName.AMR, fontSize=textResource.fontL,
+        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575, font=assetName.AMR, fontSize=textResource.fontL,
         string=""..value.." MHz", colour={r=132/255,g=82/255,b=82/255}})
     end
     

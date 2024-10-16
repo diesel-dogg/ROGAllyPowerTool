@@ -56,7 +56,7 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
 	--text for installPlans (now updated to include text for restoring power plans):
 	advancedMenu:addTextDisplay({id="installPlansText",xRelative=418,yRelative=664,font=assetName.AMR,fontSize=textResource.fontS,
 			string="For CPU limit to work, the Asus power plans must be replaced with custom power plans of the same name.".. 
-			" A command window will open on pressing this button- please follow the steps there. Alternatively, you also have the options of restoring the default Asus power plans.",
+			" A command window will open on pressing this button- please follow the steps there. Alternatively, you also have the option of restoring the default Asus power plans.",
             colour={r=132/255,g=82/255,b=82/255},width=700,align="left"})
 
 	--install/reinstall custom power plans button. The Asus armoury crate power plans are non compliant with cpu settings and other powercfg commands so 

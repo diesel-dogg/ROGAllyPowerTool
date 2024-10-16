@@ -176,7 +176,7 @@ local screenCompensation=require "scripts.helperScripts.screenCompensation"
 local soundManager=require "scripts.soundManager"
 -- local crossPromotionPopup=require "scripts.crossPromotionPopup"
 local timerService=require "scripts.helperScripts.timerService"
-
+local hardwareSettings=require "scripts.hardwareSettings"
 --------------------------
 
 local width=display.contentWidth
@@ -236,21 +236,40 @@ local function update()
 end
 
 -------------------------------
+--var to store the time difference between app suspend and resume. This is useful to check when device wakes from sleep/hibernate so that
+--the user-defined static GPU clock can be 
+local lastSuspendTime
+--NOTE: functionality pertaining to this feature was commented out in the listener below because sleep/hibernate were not triggering suspend-resume
+
 function onSystemEvent( event )
    	if(event.type=="applicationSuspend" or event.type=="applicationExit")then
 		-- call functions that we need to call on app suspension or exit.
-
+		-- Store the time when the app is suspended
+        lastSuspendTime = os.time()
 	elseif(event.type=="applicationResume")then
 		-- call functions that are needed to be evaluated on resumption of the app. after the suspension
 		
 		--first cancel all notifications and clear ios badge count
-		notifications.cancelNotificationAndResetBadge()
+		-- notifications.cancelNotificationAndResetBadge()
 
 		--hides status and navigation bar in android devices
-		if ( system.getInfo("platform") == "android" ) then
-		    native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
-		end
+		-- if ( system.getInfo("platform") == "android" ) then
+		--     native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
+		-- end
 
+		-- if lastSuspendTime then
+  --           -- Get the current time when the app resumes
+  --           local currentTime = os.time()
+
+  --           -- Calculate the difference in seconds
+  --           local timeDifference = currentTime - lastSuspendTime
+
+  --           --any significant value of time difference (which is in seconds) should be considered a sleep-wake and staticGPUclock in the hardwareSettings should be set to default
+  --           if(timeDifference>5)then
+	 --            toast.showToast("main: time diff is "..timeDifference)
+	 --            hardwareSettings.setGfxClock(0)
+	 --        end
+        -- end
 	elseif(event.type=="applicationStart")then
 		-- call functions that are needed to be evaluated on start of the app.
 

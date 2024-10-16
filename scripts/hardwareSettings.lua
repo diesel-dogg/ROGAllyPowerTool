@@ -33,14 +33,14 @@ local myMath={
 --fwd refs--
 local ryzenadjPath, rtssCLIPath, powerPlansPath, exePath, modifyXmlCommand
 
-local staticGfxClockValue=800
+local staticGfxClockValue=0
 
 ------------------------------
 --function to set the CPU clock in mhz for all power profiles on AC and DC
 function hardwareSettings.setCPUClock(clock)
     --add clause to prevent setting extreme values
-    if(clock>4000 or clock<1000)then
-        toast.showToast("Current value  might be unsafe. Setting safe default")
+    if(clock>5100 or clock<1000)then
+        toast.showToast("Current value might be unsafe. Setting safe default")
         hardwareSettings.setCPUClock(3200)
         return
     end
@@ -143,10 +143,17 @@ end
 -------------------------------
 --function to set the static GPU clock. This is undesirable on these new AMD devices because only a restart reverts them to default
 function hardwareSettings.setGfxClock(clock)
-    --add clause to prevent setting extreme values
-    if(clock>2700 or clock<400)then
-        toast.showToast("Current value  might be unsafe. Setting safe default")
-        hardwareSettings.setGfxClock(800)
+    --add clause to prevent setting extreme values. NOTE: we don't prevent a zero value from being set as that instructs the clock to be decalred as
+    if((clock>2700 or clock<400) and clock~=0)then
+        toast.showToast("Current value might be unsafe. Setting safe default")
+        hardwareSettings.setGfxClock(800)--NOTE: 800 doesn't correspond to no static clock. That will be indicated by a value of 0. 800 is actually a static clock of 800MHz
+        return
+    end
+
+    --the clause below is needed because the part of program that deploys a profile might pass a value of 0 if the profile doesn;t
+    --have a static gpu clock associated with it. In this case, we don't actually need to apply a clock at all and only change the variable's value
+    if(clock==0)then
+        staticGfxClockValue=0
         return
     end
 

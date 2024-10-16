@@ -275,6 +275,8 @@ function showProfileOptions(profileTable)
 
 		if(profileTable.gpu~="DEFAULT")then--apply gpu unless default value was found
 			hardwareSettings.setGfxClock(tonumber(profileTable.gpu))
+		else
+			hardwareSettings.setGfxClock(0)--this is the clock that corresponds to DEFAULT for GPU
 		end
 
 		if(profileTable.fps=="NO LIMIT")then--apply specified fps limit unless NO LIMIT was specified in which case, apply 0
