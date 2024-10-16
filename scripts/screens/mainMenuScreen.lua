@@ -389,7 +389,7 @@ local function writeDataToProfile(profileName)
 
     local currentGPU=hardwareSettings.getGfxClock()
 
-    if(tonumber(currentGPU)==nil or myMath.round(tonumber(currentGPU))==800)then
+    if(tonumber(currentGPU)==nil or myMath.round(tonumber(currentGPU))==0)then
         currentGPU="DEFAULT"--default
     end 
 
