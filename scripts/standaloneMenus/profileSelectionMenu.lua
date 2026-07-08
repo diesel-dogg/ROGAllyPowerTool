@@ -35,7 +35,7 @@ local myMath={
 local showProfileOptions, showConfirmationDialog
 local profile
 local callback--this is a reference of the function that called the makeprofileSelectionMenu function of this script. This is our only way of returning control back to where we came here from 
-local stringToKeyValue,readProfileTableFromFile, getAlphabeticalTableOfProfilesFromPath
+local stringToKeyValue,readProfileTableFromFile, getAlphabeticalTableOfProfilesFromPath, saveLastAppliedProfileToFile
 
 -------------------------------
 function profileSelectionMenu.makeProfileSelectionMenu(callback1,shouldFadeIn)
@@ -285,6 +285,9 @@ function showProfileOptions(profileTable)
 			hardwareSettings.setFPSLimit(tonumber(profileTable.fps))
 		end
 
+		--call the function that will save data of this profile to another file so that we can have quick access to the parameters of the profile that was last applied
+		saveLastAppliedProfileToFile(profileTable)
+
 		callback()
 	end	
 
@@ -356,6 +359,23 @@ function getAlphabeticalTableOfProfilesFromPath(path)
 	end)
 
 	return tableOfPaths
+end
+--------------
+
+--create file for last applied profile so that we can later use this as a shortcut ont he mainMenuScreen and directly apply the last applied profile
+function saveLastAppliedProfileToFile(profileTable)
+	--now write the string to file:
+    local fileHandle = io.open( "C:/ROGAllyPowerTool/lastAppliedProfile.txt", "w" )
+
+    local stringToWrite="name:"..profileTable.name.."\ntdp:"..profileTable.tdp.."\ncpu:"..profileTable.cpu.."\ngpu:"..profileTable.gpu.."\nfps:"..profileTable.fps.."\ncanDelete:false"
+    -- Check if the file was opened successfully
+    if fileHandle then
+        -- Write the text to the file
+        fileHandle:write(stringToWrite)
+        -- Close the file handle
+        fileHandle:close()
+        -- toast.showToast("Saved last applied profile")
+    end
 end
 
 

@@ -252,22 +252,77 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
     end
     --------
 
-    --stutter mode and ulps title
-    advancedMenu:addTextDisplay({id="stutterModeAndUlpsTitle",xRelative=418,yRelative=410,font=assetName.AMR,fontSize=textResource.fontM,string="DISABLE STUTTER MODE AND ULPS",
-        colour={r=90/255,g=103/255,b=121/255}, align="left",width=700})
+    -- --stutter mode and ulps title
+    -- advancedMenu:addTextDisplay({id="stutterModeAndUlpsTitle",xRelative=418,yRelative=410,font=assetName.AMR,fontSize=textResource.fontM,string="DISABLE STUTTER MODE AND ULPS",
+    --     colour={r=90/255,g=103/255,b=121/255}, align="left",width=700})
 
-    --checking the registry values for stutter mode and ULPS:
-    local currentValueTable=hardwareSettings.getStutterModeAndULPS()
+    -- --checking the registry values for stutter mode and ULPS:
+    -- local currentValueTable=hardwareSettings.getStutterModeAndULPS()
 
-    --We need to show the switch as being enabled when both stutterMode and ulps are disabled (i.e. set to 0). For any other values or even if either key is not present, we show the slider toggle in disabled state
-    if(currentValueTable and currentValueTable.stutterMode==0 and currentValueTable.ulps==0)then
-        advancedMenu:addButton({id="stutterModeAndUlpsButton",xRelative=554,yRelative=410,width=86,height=50,imageUpPath=assetName.sliderEnabled})
-    else
-        advancedMenu:addButton({id="stutterModeAndUlpsButton",xRelative=554,yRelative=410,width=86,height=50,imageUpPath=assetName.sliderDisabled})
+    -- --We need to show the switch as being enabled when both stutterMode and ulps are disabled (i.e. set to 0). For any other values or even if either key is not present, we show the slider toggle in disabled state
+    -- if(currentValueTable and currentValueTable.stutterMode==0 and currentValueTable.ulps==0)then
+    --     advancedMenu:addButton({id="stutterModeAndUlpsButton",xRelative=554,yRelative=410,width=86,height=50,imageUpPath=assetName.sliderEnabled})
+    -- else
+    --     advancedMenu:addButton({id="stutterModeAndUlpsButton",xRelative=554,yRelative=410,width=86,height=50,imageUpPath=assetName.sliderDisabled})
+    -- end
+
+    -- --callback
+    -- advancedMenu:getItemByID("stutterModeAndUlpsButton").callbackUp=function()
+    --     --no real reason to not prevent rapid inputs toggling this switch:
+    --     if(changesBlocked)then
+    --         return
+    --     else
+    --         changesBlocked=true
+    --         timerService.addTimer(1000,function()
+    --                                     changesBlocked=false
+    --                                 end)
+    --     end
+    --     soundManager.playButtonClickSound()
+
+    --     local outcome=false
+    --     local msg=nil
+    --     --this is the case where the switch was already enabled and stutter mode and ulps were both set to 0. 
+    --     --In this case, we need to set sutter mode to its typical default value of 2 and ulps to 1 as a way to restore the defaults
+    --     if(currentValueTable and currentValueTable.stutterMode==0 and currentValueTable.ulps==0)then
+    --         outcome,msg=hardwareSettings.restoreDefaultsStutterModeAndULPS()
+    --     else
+    --         --in any other case, including if either of these keys were missing in registry, we can safely create entries for both and set values to 0
+    --         outcome,msg=hardwareSettings.disableStutterModeAndULPS()
+    --     end
+
+    --     --if the actions were successfully carried out (i.e. both keys were set to 0 or restored to default), show a dialog requesting a system restart
+    --     if(outcome==true)then
+    --         advancedMenu:destroy()
+    --         showRestartDialog()--this menu will automatically make the advancedOptionsMenu when user clicks OK
+    --     end
+    -- end
+
+    -- --stutter mode and ulps body
+    -- advancedMenu:addTextDisplay({id="stutterModeAndUlpsBody",xRelative=418,yRelative=508,font=assetName.AMR,fontSize=textResource.fontS,
+    --         string="Stutter Mode is understood to be a technique to smoothen the FPS during high workloads by adjusting frame delivery at the driver level."..
+    --         " This can often be at the cost of increased input latency and responsiveness. Disabling this along with the GPU's Ultra Low Power State can possibly improve gaming experience.",
+    --         colour={r=132/255,g=82/255,b=82/255},width=700,align="left"})
+    --------
+
+
+    --FPS limit system 
+    advancedMenu:addTextDisplay({id="fpsLimitSystemTitle",xRelative=311,yRelative=555,font=assetName.AMR,fontSize=textResource.fontM,string="FPS LIMITER SYSTEM",
+        colour={r=90/255,g=103/255,b=121/255}})
+
+    --add the button for toggling the fps limiter system between frtc and rtss
+    advancedMenu:addButton({id="fpsLimitSystemButton",xRelative=524,yRelative=555,width=114,height=65,imageDownPath=nil,
+            imageUpPath=assetName.greyButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
+   
+    if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
+        advancedMenu:getItemByID("fpsLimitSystemButton"):addTextDisplay({xRelative=0,yRelative=0,font=assetName.AMB,fontSize=textResource.fontM,string="RTSS",
+        colour={r=90/255,g=103/255,b=121/255}})
+    elseif(preferenceHandler.get("fpsLimitSystem")=="FRTC")then
+        advancedMenu:getItemByID("fpsLimitSystemButton"):addTextDisplay({xRelative=0,yRelative=0,font=assetName.AMB,fontSize=textResource.fontM,string="FRTC",
+        colour={r=90/255,g=103/255,b=121/255}})
     end
 
     --callback
-    advancedMenu:getItemByID("stutterModeAndUlpsButton").callbackUp=function()
+    advancedMenu:getItemByID("fpsLimitSystemButton").callbackUp=function()
         --no real reason to not prevent rapid inputs toggling this switch:
         if(changesBlocked)then
             return
@@ -279,30 +334,26 @@ function advancedOptionsMenu.makeAdvancedOptionsMenu(callback1,shouldFadeIn)
         end
         soundManager.playButtonClickSound()
 
-        local outcome=false
-        local msg=nil
-        --this is the case where the switch was already enabled and stutter mode and ulps were both set to 0. 
-        --In this case, we need to set sutter mode to its typical default value of 2 and ulps to 1 as a way to restore the defaults
-        if(currentValueTable and currentValueTable.stutterMode==0 and currentValueTable.ulps==0)then
-            outcome,msg=hardwareSettings.restoreDefaultsStutterModeAndULPS()
-        else
-            --in any other case, including if either of these keys were missing in registry, we can safely create entries for both and set values to 0
-            outcome,msg=hardwareSettings.disableStutterModeAndULPS()
+        --to avoid a limit lingering in the previous system that was being used, we must always clear that limit out when toggling. 
+        hardwareSettings.setFPSLimit(0)
+
+        if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
+            preferenceHandler.set("fpsLimitSystem","FRTC")
+        elseif(preferenceHandler.get("fpsLimitSystem")=="FRTC")then
+            preferenceHandler.set("fpsLimitSystem","RTSS")
         end
 
-        --if the actions were successfully carried out (i.e. both keys were set to 0 or restored to default), show a dialog requesting a system restart
-        if(outcome==true)then
-            advancedMenu:destroy()
-            showRestartDialog()--this menu will automatically make the advancedOptionsMenu when user clicks OK
-        end
+        --once the actions are complete, make the menu again so that button can be revised:
+        advancedMenu:destroy()
+        advancedOptionsMenu.makeAdvancedOptionsMenu(callback, true)
     end
 
-    --stutter mode and ulps body
-    advancedMenu:addTextDisplay({id="stutterModeAndUlpsBody",xRelative=418,yRelative=508,font=assetName.AMR,fontSize=textResource.fontS,
-            string="Stutter Mode is understood to be a technique to smoothen the FPS during high workloads by adjusting frame delivery at the driver level."..
-            " This can often be at the cost of increased input latency and responsiveness. Disabling this along with the GPU's Ultra Low Power State can possibly improve gaming experience.",
+    --fps limit system body
+    advancedMenu:addTextDisplay({id="fpsLimitSystemBody",xRelative=418,yRelative=448,font=assetName.AMR,fontSize=textResource.fontS,
+            string="RivaTuner's (RTSS) framerate limiter works by forcing a CPU-delay to match the target FPS."..
+            " This can cause issues by interfering with a game engine's frame-queueing system. The FrameRateTargetControl (FRTC) is AMD's native alternative and doesn't have this shortcoming and is therefore recommended.",
             colour={r=132/255,g=82/255,b=82/255},width=700,align="left"})
-    --------
+    ----------------
 
 	--exit button
 	advancedMenu:addButton({id="exitButton",xRelative=405,yRelative=836,width=114,height=65,imageDownPath=nil,

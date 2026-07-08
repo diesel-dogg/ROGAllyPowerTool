@@ -64,7 +64,7 @@ local textResource={}
 	textResource.tryNow="TRY NOW!"
 	textResource.laterButtonText="LATER"
 	textResource.adNotAvailableToast="Ad could not be fetched"
-	textResource.copyrightText="©2024 Famous Dogg Studios LLP"
+	textResource.copyrightText="©2026 Famous Dogg Studios LLP"
 	textResource.comingSoonText="Coming soon!"
 
 	--unlock menu

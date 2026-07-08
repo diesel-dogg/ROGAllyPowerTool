@@ -31,7 +31,7 @@ local myMath={
 }
 
 --fwd refs--
-local ryzenadjPath, rtssCLIPath, powerPlansPath, exePath, modifyXmlCommand
+local ryzenadjPath, fpsPath, powerPlansPath, exePath, modifyXmlCommand
 
 local staticGfxClockValue=0
 
@@ -56,10 +56,8 @@ function hardwareSettings.setCPUClock(clock)
     local c2="powercfg -setdcvalueindex scheme_all sub_processor PROCFREQMAX".." "..clock
     local c3="powercfg -S scheme_current"
 
-    local handle = io.popen(c0.." && "..c1.." && "..c2.." && "..c3)
-    if handle then
-        handle:close()
-    else
+    local success = os.execute(c0.." && "..c1.." && "..c2.." && "..c3)
+    if not success then
         debugStmt.print("hardwareSettings: failed to execute command for setting cpu")
     end
 
@@ -69,16 +67,18 @@ end
 
 --function to get the current CPU clock reading
 function hardwareSettings.getCPUClock()
-    local handle=io.popen("powercfg /qh scheme_current SUB_PROCESSOR PROCFREQMAX", "r")
-    local output
-
-    --if valid popen handle was available, fetch and parse the output with string matching to pick up CPU clock
-    if handle then
-        output=handle:read("*a")
-        handle:close()
-    else
+    local tmpfile = "C:\\ROGAllyPowerTool\\cpu_clock_temp.txt"
+    os.execute("powercfg /qh scheme_current SUB_PROCESSOR PROCFREQMAX > " .. tmpfile)
+    
+    local file = io.open(tmpfile, "r")
+    if not file then
         debugStmt.print("hardwareSettings: failed to execute command for getting cpu clock")
+        return nil
     end
+
+    local output = file:read("*a")
+    file:close()
+    os.remove(tmpfile)
 
     local cpuClock= output:match("Current DC Power Setting Index: 0x(%x+)")--match pattern for where the clock value appears in the file
     
@@ -93,32 +93,35 @@ end
 
 --function accepts a tdp in watts and converts it into milliwatts and applies stapm, fast and slow TDP using ryzenadj
 function hardwareSettings.setTDP(tdp)
-    --add clause to prevent setting extreme values
-    if(tdp>30 or tdp<7)then
-        toast.showToast("Current value  might be unsafe. Setting safe default")
+    -- add clause to prevent setting extreme values
+    if (tdp > 30 or tdp < 7) then
+        toast.showToast("Current value might be unsafe. Setting safe default")
         hardwareSettings.setTDP(15)
         return
     end
 
-    tdp=tdp.."000"
+    tdp = tdp .. "000"
 
-    --make the command structure:
-    local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --stapm-limit='..tdp..' --fast-limit='..tdp..' --slow-limit='..tdp..' --apu-slow-limit='..tdp
-    local handle=io.popen(ryzenCommand)--though the output of this command isn't really required, it is best to have a handle for it to block asynchronous execution that is typical of io.popen. This wasn't a problem with os.execute
-    local output=handle:read("*a")
-    handle:close()
+    -- Make the command structure:
+    -- Passing cmd.exe /c prevents Windows 'start' from misinterpreting executable path as a window title
+    local ryzenCommand = 'cmd.exe /c ""' .. ryzenadjPath .. 'ryzenadj.exe" --stapm-limit=' .. tdp .. ' --fast-limit=' .. tdp .. ' --slow-limit=' .. tdp .. ' --apu-slow-limit=' .. tdp .. '"'
+
+    os.execute(ryzenCommand)
 end
 ------------------------------------
 
 function hardwareSettings.getTDP()
-    local handle=io.popen('"'..ryzenadjPath..'ryzenadj.exe"'..' --dump-table',"r")
-    local output 
-
-    --if handle was available, extract the output and put it into a table as columns and the iterate over the table
-    --to fetch the required parameter. Round off that value and return
-    if handle then
-        output=handle:read("*a")
-        handle:close()
+    local tmpfile = "C:\\ROGAllyPowerTool\\tdp_dump_temp.txt"
+    local success = os.execute('"'..ryzenadjPath..'ryzenadj.exe"'..' --dump-table > ' .. tmpfile)
+    
+    if success then
+        local file = io.open(tmpfile, "r")
+        if not file then
+            return nil
+        end
+        local output = file:read("*a")
+        file:close()
+        os.remove(tmpfile)
 
         local columns = {}
         for line in output:gmatch("([^\n]+)\n?") do
@@ -163,19 +166,23 @@ function hardwareSettings.setGfxClock(clock)
     end
 
    --make the command structure:
-    local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --gfx-clk='..clock
-    local handle=io.popen(ryzenCommand)
+    local tmpfile = "C:\\ROGAllyPowerTool\\gfx_temp.txt"
+    local ryzenCommand='"'..ryzenadjPath..'ryzenadj.exe"'..' --gfx-clk='..clock..' > ' .. tmpfile
+    local success = os.execute(ryzenCommand)
     
-    local output
-    if handle then
-        output=handle:read("*a")
-        handle:close()
+    if success then
+        local file = io.open(tmpfile, "r")
+        if file then
+            local output = file:read("*a")
+            file:close()
+            os.remove(tmpfile)
 
-        --the output typically is something like "successfully set gfx clock to 1000" etc we can check if string contained the required clocl value to know
-        --if the command executed successfully. 
-        if(string.find(output,""..clock))then
-            debugStmt.print("hardwareSettings: gfx clock was successfully set and output was "..output)
-            staticGfxClockValue=clock--update clock value
+            --the output typically is something like "successfully set gfx clock to 1000" etc we can check if string contained the required clocl value to know
+            --if the command executed successfully. 
+            if(string.find(output,""..clock))then
+                debugStmt.print("hardwareSettings: gfx clock was successfully set and output was "..output)
+                staticGfxClockValue=clock--update clock value
+            end
         end
     end
 end
@@ -192,7 +199,7 @@ function hardwareSettings.resetGfx()
     local tmpfile = "C:\\ROGAllyPowerTool\\display.txt"
     --notice how we need to use an envionrment variable to obtain the correct path of the pnputil since solar2d is 32 bit and there is no pnputil in 32 bit
     local command = "%windir%\\sysnative\\pnputil.exe /enum-devices /class DISPLAY > "..tmpfile
-    io.popen(command)
+    os.execute(command)
     
 
     --now attempt to open the file
@@ -204,6 +211,8 @@ function hardwareSettings.resetGfx()
     end
 
     local content=file:read("*a")
+    file:close()
+    os.remove(tmpfile)
 
     local displayDeviceID
     for line in content:gmatch("([^\n]+)") do
@@ -216,34 +225,58 @@ function hardwareSettings.resetGfx()
 
     local command = '%windir%\\sysnative\\pnputil.exe /restart-device '..'"'..(displayDeviceID)..'"'
     debugStmt.print("command is : "..command)
-    io.popen(command)
+    os.execute(command)
 
-    file:close()
     os.exit()--since the display device was reset, rendering will hang on the app so we should exit and then restart if needed
 end
 -----------------------
 
-function hardwareSettings.setFPSLimit(limit)
-    local rtssCommand='"'..rtssCLIPath..'rtsscli.exe"'..' limit:set '..limit
-    -- debugStmt.print("executing RTSS command "..rtssCommand)
+function hardwareSettings.setFPSLimit(limit) 
+   local command
 
-    local handle=io.popen(rtssCommand)--using a handle even though not necessary to block the execution as popen works asynchronously.
-    local output=handle:read("*a")
-    handle:close()
+    --formulate the correct command depending on whether RTSS or FRTC was to be used
+    if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
+        -- Wrapping it in cmd.exe /c strips Windows of its confusion over the colon
+        command = 'cmd.exe /c ""' .. fpsPath .. 'rtsscli.exe" limit:set ' .. limit .. '"'
+    else
+        --FRTC techincally doesn't support setting the limit to 0 so it can only be set to a very high value like 1000
+        if(limit==0)then
+            limit=1000
+        end
+        command = 'cmd.exe /c ""' .. fpsPath .. 'frtc.exe" set ' .. limit .. '"'
+    end
+
+    os.execute(command)
 end
 
 --------------
 function hardwareSettings.getFPSLimit()
-    local rtssCommand='"'..rtssCLIPath..'rtsscli.exe"'..' limit:get'
-    local handle = io.popen(rtssCommand)
+    local tmpfile = "C:\\ROGAllyPowerTool\\fps_temp.txt"
 
-    local output
-    local fps
+    --formulate the correct command depending on whether RTSS or FRTC was to be used
+    if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
+        command = 'cmd.exe /c ""' .. fpsPath .. 'rtsscli.exe" limit:get > ' .. tmpfile .. '"'
+    else
+        command = 'cmd.exe /c ""' .. fpsPath .. 'frtc.exe" get > ' .. tmpfile .. '"'
+    end
 
-    if handle then
-        output=handle:read("*a")
-        handle:close()
-        fps=tonumber(output)
+    local success = os.execute(command)
+
+    local fps = nil
+
+    if success then
+        local file = io.open(tmpfile, "r")
+        if file then
+            local output = file:read("*a")
+            file:close()
+            os.remove(tmpfile)
+            
+            if output then
+                fps = tonumber(string.match(output, "%d+"))
+            end
+        else
+            debugStmt.print("hardwareSettings: failed to read the dumped fps file")
+        end
     else
         debugStmt.print("hardwareSettings: failed to execute command for getting fps limit")
     end
@@ -253,19 +286,30 @@ end
 -------------------------
 
 function hardwareSettings.getChargingRate()
+    local tmpfile = "C:\\ROGAllyPowerTool\\charge_get_temp.txt"
      -- Build the command for registry query, using /reg:64 to force querying 64-bit registry view
-    local command = 'cmd.exe /c "reg query \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /reg:64 2>nul"'
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
-
-    -- Parse the output to get the value of ChargingRate
-    local chargingRateValue = result:match("ChargingRate%s+REG_%w+%s+(%w+)")
+    local command = 'cmd.exe /c "reg query \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /reg:64 2>nul > ' .. tmpfile .. '"'
+    local success = os.execute(command)
     
-    if chargingRateValue then
-        -- Convert hexadecimal to decimal
-        local decimalValue = tonumber(chargingRateValue, 16)
-        return myMath.round(decimalValue)
+    if success then
+        local file = io.open(tmpfile, "r")
+        if not file then
+            return nil, "Error: Could not find the ChargingRate key or there was an error executing the command."
+        end
+        local result = file:read("*a")
+        file:close()
+        os.remove(tmpfile)
+
+        -- Parse the output to get the value of ChargingRate
+        local chargingRateValue = result:match("ChargingRate%s+REG_%w+%s+(%w+)")
+        
+        if chargingRateValue then
+            -- Convert hexadecimal to decimal
+            local decimalValue = tonumber(chargingRateValue, 16)
+            return myMath.round(decimalValue)
+        else
+            return nil, "Error: Could not find the ChargingRate key or there was an error executing the command."
+        end
     else
         return nil, "Error: Could not find the ChargingRate key or there was an error executing the command."
     end
@@ -277,14 +321,25 @@ function hardwareSettings.setChargingRate(newValue)
     local hexValue = string.format("0x%X", newValue)
 
     -- Build the command for registry edit, using /reg:64 to force editing 64-bit registry view
-    local command = 'cmd.exe /c "reg add \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /t REG_DWORD /d ' .. hexValue .. ' /f /reg:64"'
-    local handle = io.popen(command)
-    local result = handle:read("*a")
-    handle:close()
+    local tmpfile = "C:\\ROGAllyPowerTool\\charge_set_temp.txt"
+    local command = 'cmd.exe /c "reg add \"HKLM\\SOFTWARE\\ASUS\\ASUS System Control Interface\\AsusOptimization\\ASUS Keyboard Hotkeys\" /v ChargingRate /t REG_DWORD /d ' .. hexValue .. ' /f /reg:64 > ' .. tmpfile .. ' 2>&1"'
+    local success = os.execute(command)
+    
+    if success then
+        local file = io.open(tmpfile, "r")
+        if not file then
+            return false, "Error: Could not update the ChargingRate value. Please check permissions or input."
+        end
+        local result = file:read("*a")
+        file:close()
+        os.remove(tmpfile)
 
-    -- Check if the output indicates success
-    if result:match("The operation completed successfully") then
-        return true, "ChargingRate value successfully updated."
+        -- Check if the output indicates success
+        if result:match("The operation completed successfully") then
+            return true, "ChargingRate value successfully updated."
+        else
+            return false, "Error: Could not update the ChargingRate value. Please check permissions or input."
+        end
     else
         return false, "Error: Could not update the ChargingRate value. Please check permissions or input."
     end
@@ -294,73 +349,104 @@ end
 --this function will ideally return a table that has decimal values of the EnableUlps and StutterMode registry keys which are
 --to be used in an appropriate UI function to check and decide if the values were default or modified and give user correct options accordingly. 
 function hardwareSettings.getStutterModeAndULPS()
+   local tmpulps = "C:\\ROGAllyPowerTool\\ulps_query_temp.txt"
+   local tmpstutter = "C:\\ROGAllyPowerTool\\stutter_query_temp.txt"
+
    -- Query for ULPS (EnableUlps) value
-    local ulpsCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /reg:64 2>nul"'
-    local ulpsHandle = io.popen(ulpsCommand)
-    local ulpsResult = ulpsHandle:read("*a")
-    ulpsHandle:close()
+   local ulpsCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /reg:64 2>nul > ' .. tmpulps .. '"'
+   os.execute(ulpsCommand)
 
-    -- Query for Stutter Mode (StutterMode) value
-    local stutterCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /reg:64 2>nul"'
-    local stutterHandle = io.popen(stutterCommand)
-    local stutterResult = stutterHandle:read("*a")
-    stutterHandle:close()
+   -- Query for Stutter Mode (StutterMode) value
+   local stutterCommand = 'cmd.exe /c "reg query \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /reg:64 2>nul > ' .. tmpstutter .. '"'
+   os.execute(stutterCommand)
 
-    -- Debugging: Print raw results for troubleshooting
-    debugStmt.print("hardwareSettings: ULPS Registry Query Result:\n" .. ulpsResult)
-    debugStmt.print("hardwareSettings: StutterMode Registry Query Result:\n" .. stutterResult)
+   local fileUlps = io.open(tmpulps, "r")
+   local fileStutter = io.open(tmpstutter, "r")
 
-    -- Parse the output to get the EnableUlps value
-    local ulpsValue = ulpsResult:match("EnableUlps%s+REG_DWORD%s+0x(%x+)")
-    
-    -- Parse the output to get the StutterMode value
-    local stutterModeValue = stutterResult:match("StutterMode%s+REG_DWORD%s+0x(%x+)")
+   if fileUlps and fileStutter then
+        local ulpsResult = fileUlps:read("*a")
+        local stutterResult = fileStutter:read("*a")
+        
+        fileUlps:close()
+        fileStutter:close()
+        os.remove(tmpulps)
+        os.remove(tmpstutter)
 
-    -- Check if both values were successfully retrieved
-    if ulpsValue and stutterModeValue then
-        -- Convert hexadecimal to decimal
-        local ulpsDecimalValue = tonumber(ulpsValue, 16)
-        local stutterModeDecimalValue = tonumber(stutterModeValue, 16)
+        -- Debugging: Print raw results for troubleshooting
+        debugStmt.print("hardwareSettings: ULPS Registry Query Result:\n" .. ulpsResult)
+        debugStmt.print("hardwareSettings: StutterMode Registry Query Result:\n" .. stutterResult)
 
-        return {
-            ulps = ulpsDecimalValue,
-            stutterMode = stutterModeDecimalValue
-        }
-    else
-        -- Return error details if one or both values weren't found
-        if not ulpsValue then
-            debugStmt.print("hardwareSettings: Error- Could not find 'EnableUlps' key.")
+        -- Parse the output to get the EnableUlps value
+        local ulpsValue = ulpsResult:match("EnableUlps%s+REG_DWORD%s+0x(%x+)")
+        
+        -- Parse the output to get the StutterMode value
+        local stutterModeValue = stutterResult:match("StutterMode%s+REG_DWORD%s+0x(%x+)")
+
+        -- Check if both values were successfully retrieved
+        if ulpsValue and stutterModeValue then
+            -- Convert hexadecimal to decimal
+            local ulpsDecimalValue = tonumber(ulpsValue, 16)
+            local stutterModeDecimalValue = tonumber(stutterModeValue, 16)
+
+            return {
+                ulps = ulpsDecimalValue,
+                stutterMode = stutterModeDecimalValue
+            }
+        else
+            -- Return error details if one or both values weren't found
+            if not ulpsValue then
+                debugStmt.print("hardwareSettings: Error- Could not find 'EnableUlps' key.")
+            end
+            if not stutterModeValue then
+                debugStmt.print("hardwareSettings: Error- Could not find 'StutterMode' key.")
+            end
+
+            return nil, "Error: Could not find one or both registry values (EnableUlps or StutterMode)."
         end
-        if not stutterModeValue then
-            debugStmt.print("hardwareSettings: Error- Could not find 'StutterMode' key.")
-        end
-
-        return nil, "Error: Could not find one or both registry values (EnableUlps or StutterMode)."
-    end
+   else
+        if fileUlps then fileUlps:close() os.remove(tmpulps) end
+        if fileStutter then fileStutter:close() os.remove(tmpstutter) end
+        return nil, "Error: Could not read registry query output files."
+   end
 end
 -------------------------
 
 --this function disables both ulps and stutter mode
 function hardwareSettings.disableStutterModeAndULPS()
+    local tmpulps = "C:\\ROGAllyPowerTool\\ulps_set_temp.txt"
+    local tmpstutter = "C:\\ROGAllyPowerTool\\stutter_set_temp.txt"
+
     -- Command to set ULPS (EnableUlps) to 0
-    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 0 /f /reg:64"'
+    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 0 /f /reg:64 > ' .. tmpulps .. ' 2>&1"'
     
     -- Command to set Stutter Mode (StutterMode) to 0
-    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 0 /f /reg:64"'
+    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 0 /f /reg:64 > ' .. tmpstutter .. ' 2>&1"'
 
     -- Execute the commands
-    local ulpsHandle = io.popen(setULPSCommand)
-    local ulpsResult = ulpsHandle:read("*a")
-    ulpsHandle:close()
+    os.execute(setULPSCommand)
+    os.execute(setStutterModeCommand)
 
-    local stutterHandle = io.popen(setStutterModeCommand)
-    local stutterResult = stutterHandle:read("*a")
-    stutterHandle:close()
+    local fileUlps = io.open(tmpulps, "r")
+    local fileStutter = io.open(tmpstutter, "r")
 
-    -- Check if both operations were successful
-    if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
-        return true, "ULPS and Stutter Mode have been successfully set to 0."
+    if fileUlps and fileStutter then
+        local ulpsResult = fileUlps:read("*a")
+        local stutterResult = fileStutter:read("*a")
+        
+        fileUlps:close()
+        fileStutter:close()
+        os.remove(tmpulps)
+        os.remove(tmpstutter)
+
+        -- Check if both operations were successful
+        if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
+            return true, "ULPS and Stutter Mode have been successfully set to 0."
+        else
+            return false, "Error: Could not set ULPS and/or Stutter Mode to 0."
+        end
     else
+        if fileUlps then fileUlps:close() os.remove(tmpulps) end
+        if fileStutter then fileStutter:close() os.remove(tmpstutter) end
         return false, "Error: Could not set ULPS and/or Stutter Mode to 0."
     end
 end
@@ -368,25 +454,40 @@ end
 
 --this function sets 2 for stutter mode and 1 for ulps thereby restoring defaults
 function hardwareSettings.restoreDefaultsStutterModeAndULPS()
+    local tmpulps = "C:\\ROGAllyPowerTool\\ulps_restore_temp.txt"
+    local tmpstutter = "C:\\ROGAllyPowerTool\\stutter_restore_temp.txt"
+
     -- Command to set ULPS (EnableUlps) to 1
-    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 1 /f /reg:64"'
+    local setULPSCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v EnableUlps /t REG_DWORD /d 1 /f /reg:64 > ' .. tmpulps .. ' 2>&1"'
     
     -- Command to set Stutter Mode (StutterMode) to 2
-    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 2 /f /reg:64"'
+    local setStutterModeCommand = 'cmd.exe /c "reg add \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000\" /v StutterMode /t REG_DWORD /d 2 /f /reg:64 > ' .. tmpstutter .. ' 2>&1"'
 
     -- Execute the commands
-    local ulpsHandle = io.popen(setULPSCommand)
-    local ulpsResult = ulpsHandle:read("*a")
-    ulpsHandle:close()
+    os.execute(setULPSCommand)
+    os.execute(setStutterModeCommand)
 
-    local stutterHandle = io.popen(setStutterModeCommand)
-    local stutterResult = stutterHandle:read("*a")
-    stutterHandle:close()
+    local fileUlps = io.open(tmpulps, "r")
+    local fileStutter = io.open(tmpstutter, "r")
 
-    -- Check if both operations were successful
-    if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
-        return true, "ULPS and Stutter Mode have been successfully set to defaults"
+    if fileUlps and fileStutter then
+        local ulpsResult = fileUlps:read("*a")
+        local stutterResult = fileStutter:read("*a")
+        
+        fileUlps:close()
+        fileStutter:close()
+        os.remove(tmpulps)
+        os.remove(tmpstutter)
+
+        -- Check if both operations were successful
+        if ulpsResult:find("The operation completed successfully") and stutterResult:find("The operation completed successfully") then
+            return true, "ULPS and Stutter Mode have been successfully set to defaults"
+        else
+            return false, "Error: Could not set ULPS and/or Stutter Mode to defaults"
+        end
     else
+        if fileUlps then fileUlps:close() os.remove(tmpulps) end
+        if fileStutter then fileStutter:close() os.remove(tmpstutter) end
         return false, "Error: Could not set ULPS and/or Stutter Mode to defaults"
     end
 end
@@ -522,10 +623,10 @@ ryzenadjPath=system.pathForFile( "ryzenadj/ryzenadj.exe" ,system.ResourceDirecto
 ryzenadjPath=ryzenadjPath:gsub("/","\\")
 ryzenadjPath=ryzenadjPath:gsub("ryzenadj.exe","")--since we need to use this path for other purposes as well, we remove the ryzenadj.exe part from it
 
---create the path variable for where we store rtss-CLI.exe
-rtssCLIPath=system.pathForFile( "RTSS/rtsscli.exe" ,system.ResourceDirectory )
-rtssCLIPath=rtssCLIPath:gsub("/","\\")
-rtssCLIPath=rtssCLIPath:gsub("rtsscli.exe","")
+--create the path variable for where we store rtss-CLI.exe and the frtc controller interfact
+fpsPath=system.pathForFile( "FPS/rtsscli.exe" ,system.ResourceDirectory )
+fpsPath=fpsPath:gsub("/","\\")
+fpsPath=fpsPath:gsub("rtsscli.exe","")
 
 --create the path variable for where we store the batch file that reinstalls and replaces asus power plans
 powerPlansPath=system.pathForFile( "powerPlans/reinstallCustomPlans.bat" ,system.ResourceDirectory )

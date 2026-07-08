@@ -130,9 +130,14 @@ function preferenceHandler.init()
 		debugStmt.print("preferenceHandler: initing firstLaunchStepsPerformed to false")
 		box:set("firstLaunchStepsPerformed",false)
 	end
+
+	if box:get("fpsLimitSystem")== nil then
+		debugStmt.print("preferenceHandler: initing fpsLimitSystem to FRTC")
+		box:set("fpsLimitSystem","FRTC")
+	end
 	
 	--rig prefs
-	-- box:set("lastItemSelected",1) 
+	-- box:set("firstLaunchStepsPerformed",true) 
 	-- box:set("currency",300) 
 	-- box:set("item2Unlocked",false)--uncomment to test unlock menu
 	-- box:set("item2Purchased",false)--uncomment to test unlock menu

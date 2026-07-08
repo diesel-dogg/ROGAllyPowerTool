@@ -280,8 +280,11 @@ function onSystemEvent( event )
 		    native.setProperty( "androidSystemUiVisibility", "immersiveSticky" )
 		end
 
-		-- composer.gotoScene ("scripts.screens.mainMenuScreen", {params={callingScene="nil"}})
-		composer.gotoScene ("scripts.screens.splashScreen", {params={callingScene="nil"}})
+		if(isDebugMode)then
+			composer.gotoScene ("scripts.screens.mainMenuScreen", {params={callingScene="nil"}})
+		else	
+			composer.gotoScene ("scripts.screens.splashScreen", {params={callingScene="nil"}})
+		end
 	end
 end
 

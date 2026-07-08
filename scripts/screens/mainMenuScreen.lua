@@ -40,32 +40,34 @@ local myMath={
     max=math.max,
 }
 -----------------------fwd refs:---
-local mainMenu, makeProfileSaveMenu,makeFirstLaunchDialog
+local mainMenu, makeProfileSaveMenu,makeFirstLaunchDialog, applyLastSelectedProfile, stringToKeyValue
 local changesBlocked=false--this boolean is toggled with help of a 1s timer to prevent rapid input from user
+local lastAppliedProfileTable--this is the table that will be populated from a file that we store where data on the last profile applied by the user is stored for quick access
+
 
 -- level selection menu containing all levels in game.
 function makeMainMenu(shouldFadeIn)
-    mainMenu=menuMaker.newMenu({name="mainMenu",x=135,y=0,masterImageGroup=menuDisplayGroup, baseImagePath=assetName.mainMenuBase,
-    baseImageWidth=540,baseImageHeight=900})
+    mainMenu=menuMaker.newMenu({name="mainMenu",x=135,y=0,masterImageGroup=menuDisplayGroup, baseImagePath=assetName.mainMenuBase2,
+    baseImageWidth=540,baseImageHeight=950})
     
     --menu title text
     if(hardwareSettings.isRunAsAdmin())then
-    	mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=66,font=assetName.AMB,fontSize=textResource.fontXL,string="QUICK SETTINGS",
+    	mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=45,font=assetName.AMB,fontSize=textResource.fontL,string="QUICK SETTINGS",
             colour={r=90/255,g=103/255,b=121/255},sizeLimit={width=500}})
     else
-        mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=66,font=assetName.AMB,fontSize=textResource.fontXL,string="APP NOT RUN AS ADMIN!!",
+        mainMenu:addTextDisplay({id="title",xRelative=270,yRelative=45,font=assetName.AMB,fontSize=textResource.fontL,string="APP NOT RUN AS ADMIN!!",
             colour={r=132/255,g=82/255,b=82/255},sizeLimit={width=500}})
     end
     -----------------
     --tdp title
-    mainMenu:addTextDisplay({id="tdpTitle",xRelative=270,yRelative=168,font=assetName.AMR,fontSize=textResource.fontM,string="TDP",
+    mainMenu:addTextDisplay({id="tdpTitle",xRelative=270,yRelative=168-50,font=assetName.AMR,fontSize=textResource.fontM,string="TDP",
         colour={r=90/255,g=103/255,b=121/255}})
 	
     --TDP up button 
-    mainMenu:addButton({id="tdpUp",xRelative=116,yRelative=228,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
+    mainMenu:addButton({id="tdpUp",xRelative=116,yRelative=228-50,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
 
     --TDP down button 
-    mainMenu:addButton({id="tdpDown",xRelative=414,yRelative=228,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
+    mainMenu:addButton({id="tdpDown",xRelative=414,yRelative=228-50,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
 
     --menu TDP text
@@ -73,7 +75,7 @@ function makeMainMenu(shouldFadeIn)
     if(value==nil)then
         value="?"
     end
-    mainMenu:addTextDisplay({id="tdpText", xRelative=270, yRelative=228, font=assetName.AMR, fontSize=textResource.fontL,
+    mainMenu:addTextDisplay({id="tdpText", xRelative=270, yRelative=228-50, font=assetName.AMR, fontSize=textResource.fontL,
     string=""..value.." W", colour={r=132/255,g=82/255,b=82/255}})
     
    
@@ -108,14 +110,14 @@ function makeMainMenu(shouldFadeIn)
                                                     end
    -----------------
    --cpu title
-    mainMenu:addTextDisplay({id="cpuTitle",xRelative=270,yRelative=330,font=assetName.AMR,fontSize=textResource.fontM,string="CPU CLOCK",
+    mainMenu:addTextDisplay({id="cpuTitle",xRelative=270,yRelative=330-70,font=assetName.AMR,fontSize=textResource.fontM,string="CPU CLOCK",
         colour={r=90/255,g=103/255,b=121/255}})
 
     --CPU up button 
-    mainMenu:addButton({id="cpuUp",xRelative=116,yRelative=390,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
+    mainMenu:addButton({id="cpuUp",xRelative=116,yRelative=390-70,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
 
     --CPU down button 
-    mainMenu:addButton({id="cpuDown",xRelative=414,yRelative=390,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
+    mainMenu:addButton({id="cpuDown",xRelative=414,yRelative=390-70,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
 
     --menu CPU clock text
@@ -123,7 +125,7 @@ function makeMainMenu(shouldFadeIn)
     if(value==nil)then
         value="?"
     end
-    mainMenu:addTextDisplay({id="cpuSpeedText", xRelative=270, yRelative=390, font=assetName.AMR, fontSize=textResource.fontL,
+    mainMenu:addTextDisplay({id="cpuSpeedText", xRelative=270, yRelative=390-70, font=assetName.AMR, fontSize=textResource.fontL,
     string=""..value.." MHz", colour={r=132/255,g=82/255,b=82/255}})
     
    
@@ -159,14 +161,14 @@ function makeMainMenu(shouldFadeIn)
 
     -----------------
     --gpu title
-    mainMenu:addTextDisplay({id="gpuTitle",xRelative=270,yRelative=500,font=assetName.AMR,fontSize=textResource.fontM,string="GPU STATIC CLOCK \n (sleep-awake or restart device to unlimit!)",
+    mainMenu:addTextDisplay({id="gpuTitle",xRelative=270,yRelative=500-70,font=assetName.AMR,fontSize=textResource.fontM,string="GPU STATIC CLOCK \n (sleep-wake or restart device to reset!)",
         colour={r=90/255,g=103/255,b=121/255}, align="center", width=540})
 
     --gpu up button 
-    mainMenu:addButton({id="gpuUp",xRelative=116,yRelative=575,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
+    mainMenu:addButton({id="gpuUp",xRelative=116,yRelative=575-70,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
 
     --gpu down button 
-    mainMenu:addButton({id="gpuDown",xRelative=414,yRelative=575,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
+    mainMenu:addButton({id="gpuDown",xRelative=414,yRelative=575-70,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
     --menu gpu clock text
     local value=hardwareSettings.getGfxClock()
@@ -175,10 +177,10 @@ function makeMainMenu(shouldFadeIn)
     end
     --GPU clock is not actually read from the ryzenAdj dump but picked up from a persisting veriable in the hardwareSettings script. A value of 0 is default and indicates no user-defined static clock
     if(value==0)then
-        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575, font=assetName.AMR, fontSize=textResource.fontL,
+        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575-70, font=assetName.AMR, fontSize=textResource.fontL,
         string="DEFAULT", colour={r=132/255,g=82/255,b=82/255}})
     else
-        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575, font=assetName.AMR, fontSize=textResource.fontL,
+        mainMenu:addTextDisplay({id="gpuClockText", xRelative=270, yRelative=575-70, font=assetName.AMR, fontSize=textResource.fontL,
         string=""..value.." MHz", colour={r=132/255,g=82/255,b=82/255}})
     end
     
@@ -214,14 +216,14 @@ function makeMainMenu(shouldFadeIn)
                                                     end  
     -----------------                                                
     --FPS title
-    mainMenu:addTextDisplay({id="fpsTitle",xRelative=270,yRelative=675,font=assetName.AMR,fontSize=textResource.fontM,string="FPS LIMIT",
+    mainMenu:addTextDisplay({id="fpsTitle",xRelative=270,yRelative=675-20-70,font=assetName.AMR,fontSize=textResource.fontM,string="FPS LIMIT ("..preferenceHandler.get("fpsLimitSystem")..")",
         colour={r=90/255,g=103/255,b=121/255}})
 
     --fps up button 
-    mainMenu:addButton({id="fpsUp",xRelative=116,yRelative=730,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
+    mainMenu:addButton({id="fpsUp",xRelative=116,yRelative=730-20-70,width=90,height=90,imageUpPath=assetName.upButton,doesScaleDown=true})
 
     --fps down button 
-    mainMenu:addButton({id="fpsDown",xRelative=414,yRelative=730,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
+    mainMenu:addButton({id="fpsDown",xRelative=414,yRelative=730-20-70,width=90,height=90,imageUpPath=assetName.downButton,doesScaleDown=true})
 
     
     local value=hardwareSettings.getFPSLimit()
@@ -230,18 +232,18 @@ function makeMainMenu(shouldFadeIn)
     end
     local currentFPS=value--fetching a value here since we need to go over multiple cases to set FPS values based on current value in button action so we cannot keep fetching
 
-    if(currentFPS==nil or currentFPS==0)then--if no value is read from file or 0 is read, then declare the limit as NO LIMIT
-        mainMenu:addTextDisplay({id="fpsText", xRelative=270, yRelative=730, font=assetName.AMR, fontSize=textResource.fontL,
+    if(currentFPS==nil or currentFPS==0 or currentFPS==1000)then--if no value is read from file or 0 is read (RTSS) or 1000 is read (FRTC), then declare the limit as NO LIMIT
+        mainMenu:addTextDisplay({id="fpsText", xRelative=270, yRelative=730-20-70, font=assetName.AMR, fontSize=textResource.fontL,
         string="NO LIMIT", colour={r=132/255,g=82/255,b=82/255}})
     else
-         mainMenu:addTextDisplay({id="fpsText", xRelative=270, yRelative=730, font=assetName.AMR, fontSize=textResource.fontL,
+         mainMenu:addTextDisplay({id="fpsText", xRelative=270, yRelative=730-20-70, font=assetName.AMR, fontSize=textResource.fontL,
         string=""..currentFPS, colour={r=132/255,g=82/255,b=82/255}})
     end
     
    
     mainMenu:getItemByID("fpsUp").callbackUp=function()
                                                     local toSet
-                                                    if(currentFPS==nil or currentFPS==0)then
+                                                    if(currentFPS==nil or currentFPS==0 or currentFPS==1000)then
                                                         toSet=30
                                                     elseif(currentFPS==30)then
                                                         toSet=40
@@ -277,7 +279,7 @@ function makeMainMenu(shouldFadeIn)
 
                                                     --now fetch fps and readjust string
                                                     currentFPS=hardwareSettings.getFPSLimit()
-                                                    if(currentFPS==nil or currentFPS==0)then
+                                                    if(currentFPS==nil or currentFPS==0 or currentFPS==1000)then
                                                         mainMenu:getItemByID("fpsText").text="NO LIMIT"
                                                     else
                                                         mainMenu:getItemByID("fpsText").text=""..currentFPS
@@ -286,7 +288,7 @@ function makeMainMenu(shouldFadeIn)
 
     mainMenu:getItemByID("fpsDown").callbackUp=function()
                                                     local toSet
-                                                    if(currentFPS==nil or currentFPS==0)then
+                                                    if(currentFPS==nil or currentFPS==0 or currentFPS==1000)then
                                                         toSet=120
                                                     elseif(currentFPS==120)then
                                                         toSet=117
@@ -322,7 +324,7 @@ function makeMainMenu(shouldFadeIn)
 
                                                     --now fetch fps and readjust string
                                                     currentFPS=hardwareSettings.getFPSLimit()
-                                                    if(currentFPS==nil or currentFPS==0)then
+                                                    if(currentFPS==nil or currentFPS==0 or currentFPS==1000)then
                                                         mainMenu:getItemByID("fpsText").text="NO LIMIT"
                                                     else
                                                         mainMenu:getItemByID("fpsText").text=""..currentFPS
@@ -331,7 +333,7 @@ function makeMainMenu(shouldFadeIn)
 
     -----------------                                                 
     --profiles button 
-    mainMenu:addButton({id="profilesButton",xRelative=88,yRelative=836,width=114,height=65,imageDownPath=nil,
+    mainMenu:addButton({id="profilesButton",xRelative=88,yRelative=878,width=114,height=65,imageDownPath=nil,
             imageUpPath=assetName.greyButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
     mainMenu:getItemByID("profilesButton"):addTextDisplay({id="profilesButtonText",xRelative=0,yRelative=0,font=assetName.AMB, fontSize=textResource.fontM,
     string="PROFILES", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=100}})
@@ -343,7 +345,7 @@ function makeMainMenu(shouldFadeIn)
                                                     end 
 
     --save profile button 
-    mainMenu:addButton({id="saveProfile",xRelative=270,yRelative=836,width=114,height=65,imageDownPath=nil,
+    mainMenu:addButton({id="saveProfile",xRelative=270,yRelative=878,width=114,height=65,imageDownPath=nil,
             imageUpPath=assetName.greyButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
     mainMenu:getItemByID("saveProfile"):addTextDisplay({id="profilesButtonText",xRelative=0,yRelative=0,font=assetName.AMB, fontSize=textResource.fontM,
     string="CREATE \nPROFILE", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={height=50}, align="center"})
@@ -355,7 +357,7 @@ function makeMainMenu(shouldFadeIn)
                                                     end                                                            
 
     --button to go to the advanced menu
-    mainMenu:addButton({id="advanced",xRelative=454,yRelative=836,width=114,height=65,imageDownPath=nil,
+    mainMenu:addButton({id="advanced",xRelative=454,yRelative=878,width=114,height=65,imageDownPath=nil,
             imageUpPath=assetName.greyButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
     mainMenu:getItemByID("advanced"):addTextDisplay({id="advancedText",xRelative=0,yRelative=0,font=assetName.AMB, fontSize=textResource.fontM,
     string="ADVANCED", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=100}})
@@ -364,7 +366,35 @@ function makeMainMenu(shouldFadeIn)
                                                         soundManager.playButtonClickSound()
                                                         mainMenu:destroy()
                                                         advancedOptionsMenu.makeAdvancedOptionsMenu(function() makeMainMenu(true) end,true)
-                                                    end                                                                                 
+                                                    end  
+
+    --before we can create a button for the last appled profile, we need to first read in its data and be sure that such a profile actually did exist                                                
+    local file, errorString = io.open("C:/ROGAllyPowerTool/lastAppliedProfile.txt", "r" )
+
+    if(file)then
+        local contents = file:read( "*a" )
+        lastAppliedProfileTable = stringToKeyValue(contents)
+        -- Close the file handle
+        io.close( file )
+    end
+
+    --apply last selected profile button 
+    mainMenu:addTextDisplay({id="lastProfileButtonText",xRelative=270,yRelative=712,font=assetName.AMB, fontSize=textResource.fontS,
+    string="QUICK APPLY LAST PROFILE", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=500}, align="center"})
+  
+    mainMenu:addButton({id="lastProfile",xRelative=270,yRelative=764,width=158*2,height=61,imageDownPath=nil,
+            imageUpPath=assetName.greenButton,callbackDown=nil,callbackUp=nil,alphaDown=nil,alphaUp=nil,doesScaleDown=true})
+    if(lastAppliedProfileTable~=nil)then
+        mainMenu:getItemByID("lastProfile"):addTextDisplay({id="lastProfileButtonText",xRelative=0,yRelative=0,font=assetName.AMR, fontSize=textResource.fontS,
+        string=lastAppliedProfileTable.name, colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=500}, align="center"})
+    else
+        mainMenu:getItemByID("lastProfile"):addTextDisplay({id="lastProfileButtonText",xRelative=0,yRelative=0,font=assetName.AMR, fontSize=textResource.fontS,
+        string="-", colour={r=90/255,g=103/255,b=121/255}, sizeLimit={width=500}, align="center"})
+    end
+    mainMenu:getItemByID("lastProfile").callbackUp=function()
+                                                        soundManager.playButtonClickSound()
+                                                        applyLastSelectedProfile()
+                                                    end                                                                                                                                      
 
     --add a fadeIn effect if indicated in the fn call
 	if(shouldFadeIn)then
@@ -469,6 +499,37 @@ function makeProfileSaveMenu()
 end
 
 ----------------------------------
+function applyLastSelectedProfile()
+    if(lastAppliedProfileTable==nil)then
+        toast.showToast("Currently unavailable")
+        return
+    end
+
+    --Start checking all parameters from the profile table and then make calls to the hardwareSettings script to apply them:
+    --IMPORTANT- ALL VALUES THAT ARE TAKEN FROM FILE ARE STRINGS. CONVERT TO NUMBER WHERE NEEDED BEFORE PASSING
+    hardwareSettings.setTDP(tonumber(lastAppliedProfileTable.tdp))--apply tdp
+
+    hardwareSettings.setCPUClock(tonumber(lastAppliedProfileTable.cpu))--apply cpu
+
+
+    if(lastAppliedProfileTable.gpu~="DEFAULT")then--apply gpu unless default value was found
+        hardwareSettings.setGfxClock(tonumber(lastAppliedProfileTable.gpu))
+    else
+        hardwareSettings.setGfxClock(0)--this is the clock that corresponds to DEFAULT for GPU
+    end
+
+    if(lastAppliedProfileTable.fps=="NO LIMIT")then--apply specified fps limit unless NO LIMIT was specified in which case, apply 0
+        hardwareSettings.setFPSLimit(0)
+    else 
+        hardwareSettings.setFPSLimit(tonumber(lastAppliedProfileTable.fps))
+    end
+
+    --remake the mainMenu after the profile is applied:
+    mainMenu:destroy()
+    makeMainMenu()
+end
+
+----------------------------------
 --this function will be called until the necessary option in the dialog shown is selected by the user to install the custom power plans
 --once they do so, the preference is toggled and it won't be shown again. This is the first thing anyone will see when they get past the splash screen
 function makeFirstLaunchDialog()
@@ -568,7 +629,7 @@ function mainMenuScreen:create(event)
         makeFirstLaunchDialog()
     else
         makeMainMenu()
-        toast.showToast("MMS: DEBUG IS ON")
+        toast.showToast("MMS: DEBUG IS ON make sure exe name has spaces 'ROG Ally Power Tool.exe'")
     end
 end
 -----------------------
@@ -585,5 +646,20 @@ end
 -- Listener setup
 mainMenuScreen:addEventListener( "create", mainMenuScreen )
 mainMenuScreen:addEventListener( "destroy", mainMenuScreen )
+
+
+---------HELPERS-------------
+--helper function to take in a string value (raw file data) and convert it to JSON. KV pairs have to be organised
+--in a very specific manner. See the superLoader.txt file for reference
+function stringToKeyValue(str)
+    local t = {}
+    for line in str:gmatch"[^\n]+" do
+        local k, v = line:match"^([^:]+):([^:]+)$"
+        if k then -- line is k:v pair?
+           t[k] = v
+        end
+    end
+    return t
+end
 
 return mainMenuScreen

@@ -24,11 +24,13 @@ local assetName={
 	---------------------
 	-- main Menu
 	mainMenuBase="assets/UI/mainMenu/".."mainMenuBase.png",
+	mainMenuBase2="assets/UI/mainMenu/".."mainMenuBase2.png",
 	blankImage="assets/".."UI/".."blankImage.png",
 	downButton="assets/UI/mainMenu/".."scrollDownButton.png",
 	upButton="assets/UI/mainMenu/".."scrollUpButton.png",
 	greyButton="assets/UI/mainMenu/".."greyButton.png",
 	greyButtonLarge="assets/UI/mainMenu/".."greyButtonLarge.png",
+	greyButtonXL="assets/UI/mainMenu/".."greyButtonXL.png",
 	greenButton="assets/UI/mainMenu/".."greenButton.png",
 
 	--advanced menu
