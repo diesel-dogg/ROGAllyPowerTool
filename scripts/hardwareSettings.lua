@@ -234,16 +234,16 @@ end
 function hardwareSettings.setFPSLimit(limit) 
    local command
 
-    --formulate the correct command depending on whether RTSS or FRTC was to be used
+    --formulate the correct command depending on whether RTSS or FRTC/chill was to be used
     if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
         -- Wrapping it in cmd.exe /c strips Windows of its confusion over the colon
         command = 'cmd.exe /c ""' .. fpsPath .. 'rtsscli.exe" limit:set ' .. limit .. '"'
     else
         --FRTC techincally doesn't support setting the limit to 0 so it can only be set to a very high value like 1000
         if(limit==0)then
-            limit=1000
+            limit=1000--the command line helper will automatically disable Chill when it gets an input of 1000 so this works with both FRTC and Chill
         end
-        command = 'cmd.exe /c ""' .. fpsPath .. 'frtc.exe" set ' .. limit .. '"'
+        command = 'cmd.exe /c ""' .. fpsPath .. 'frtcchill.exe" set ' .. limit .. '"'
     end
 
     os.execute(command)
@@ -253,11 +253,11 @@ end
 function hardwareSettings.getFPSLimit()
     local tmpfile = "C:\\ROGAllyPowerTool\\fps_temp.txt"
 
-    --formulate the correct command depending on whether RTSS or FRTC was to be used
+    --formulate the correct command depending on whether RTSS or FRTC/chill was to be used
     if(preferenceHandler.get("fpsLimitSystem")=="RTSS")then
         command = 'cmd.exe /c ""' .. fpsPath .. 'rtsscli.exe" limit:get > ' .. tmpfile .. '"'
     else
-        command = 'cmd.exe /c ""' .. fpsPath .. 'frtc.exe" get > ' .. tmpfile .. '"'
+        command = 'cmd.exe /c ""' .. fpsPath .. 'frtcchill.exe" get > ' .. tmpfile .. '"'
     end
 
     local success = os.execute(command)
